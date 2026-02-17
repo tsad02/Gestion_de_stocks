@@ -1,9 +1,5 @@
-import pg from "pg";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const { Pool } = pg;
+const { Pool } = require("pg");
+require("dotenv").config();
 
 // Option A : DATABASE_URL
 const pool = process.env.DATABASE_URL
@@ -21,4 +17,4 @@ pool.on("error", (err) => {
   console.error("Unexpected PG error:", err);
 });
 
-export default pool;
+module.exports = pool;

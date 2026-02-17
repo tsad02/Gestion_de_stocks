@@ -1,17 +1,20 @@
-import express from "express";
-import pool from "./db.js";
+require("dotenv").config();
+const express = require("express");
+const productsRoutes = require("./routes/products.routes");
+const healthRoutes = require("./routes/health.routes");
+const notFound = require("./middleware/notFound");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
+
 app.use(express.json());
 
-// Healthcheck API + DB
-app.get("/api/health", async (req, res) => {
-  try {
-    const r = await pool.query("SELECT 1 AS ok;");
-    res.json({ api: "ok", db: r.rows[0].ok === 1 ? "ok" : "unknown" });
-  } catch (err) {
-    res.status(500).json({ api: "ok", db: "error", message: err.message });
-  }
-});
+// routes
+app.use("/api/health", healthRoutes);
+app.use("/api/products", productsRoutes);
 
-export default app;
+// middlewares finaux
+app.use(notFound);
+app.use(errorHandler);
+
+module.exports = app;
