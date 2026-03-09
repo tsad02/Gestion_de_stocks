@@ -1,13 +1,16 @@
-console.log("=== SERVER.JS LOADED ===");
-console.log("SERVER FILE EXECUTED");
-require("dotenv").config();
+require("dotenv").config(); // Charge les variables d'environnement depuis le fichier .env
 const app = require("./app");
 
-console.log("JWT_SECRET:", process.env.JWT_SECRET ? "OK" : "MISSING");
-console.log("JWT_EXPIRES_IN:", process.env.JWT_EXPIRES_IN || "MISSING");
-
+// Récupère le port depuis l'environnement ou utilise 3000 par défaut
 const PORT = process.env.PORT || 3000;
 
+/**
+ * Lancement du serveur
+ */
 app.listen(PORT, () => {
-  console.log(`API running on http://localhost:${PORT}`);
+  console.log(`==========================================`);
+  console.log(`🚀 SERVEUR DÉMARRÉ SUR LE PORT : ${PORT}`);
+  console.log(`📍 URL : http://localhost:${PORT}`);
+  console.log(`📚 MODE : ${process.env.NODE_ENV || 'Développement'}`);
+  console.log(`==========================================`);
 });

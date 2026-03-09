@@ -1,23 +1,27 @@
-require("dotenv").config();
 const express = require("express");
-const productsRoutes = require("./routes/products.routes");
-const authRoutes = require("./routes/auth.routes");
+const cors = require("cors");
 const healthRoutes = require("./routes/health.routes");
-const notFound = require("./middleware/notFound");
+const authRoutes = require("./routes/auth.routes");
+const productRoutes = require("./routes/products.routes");
 const errorHandler = require("./middleware/errorHandler");
 
+/**
+ * Configuration de l'application Express
+ */
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// --- Middlewares Globaux ---
+app.use(cors()); // Autorise les requêtes cross-origin
+app.use(express.json()); // Permet de lire le corps des requêtes en format JSON
+app.use(express.urlencoded({ extended: true })); // Permet de lire les formulaires URL-encoded
 
-// routes
-app.use("/api/health", healthRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productsRoutes);
+// --- Enregistrement des Routes API ---
+app.use("/api/health", healthRoutes);   // Route de vérification d'état
+app.use("/api/auth", authRoutes);       // Routes d'authentification (login, register)
+app.use("/api/products", productRoutes); // Routes de gestion des produits (CRUD)
 
-// middlewares finaux
-app.use(notFound);
+// --- Gestionnaire d'Erreurs Centralisé ---
+// Doit toujours être placé après les routes
 app.use(errorHandler);
 
 module.exports = app;
