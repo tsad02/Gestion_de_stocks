@@ -1,11 +1,16 @@
 const { Pool } = require("pg");
+require("dotenv").config();
 
 /**
  * Configuration de la connexion PostgreSQL
  * Utilise les variables d'environnement spécifiées dans le fichier .env
  */
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  user: process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD || "postgres",
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || "gestion_stocks"
 });
 
 // Événement déclenché lors de la connexion réussie au pool

@@ -1,0 +1,101 @@
+classDiagram
+    class User {
+        -int id
+        -string username
+        -string password (hashed)
+        -string role
+        -timestamp createdAt
+        +register(username, password, role)
+        +login(username, password)
+        +validatePassword(pwd)
+        +generateJWT()
+        +validateJWT(token)
+    }
+
+    class Product {
+        -int id
+        -string name
+        -string category
+        -string unit
+        -int minThreshold
+        -int quantity
+        -timestamp createdAt
+        +create(name, category, unit, minThreshold)
+        +update(id, fields)
+        +delete(id)
+        +getStockActuel() int
+        +isInAlert() boolean
+    }
+
+    class InventoryMovement {
+        -int id
+        -int productId FK
+        -int userId FK
+        -string type ENUM
+        -int quantity
+        -string reason
+        -timestamp createdAt
+        +create(productId, userId, type, quantity, reason)
+        +getMovementsByProduct(productId)
+        +getMovementsByUser(userId)
+        +getLastMovements(limit)
+    }
+
+    class StockCalculator {
+        +calculateStock(productId) int
+        +getMovementsByType(productId, type) int
+        +getSummary(productId) Object
+        +checkAlerts() Array
+    }
+
+    class Dashboard {
+        -int totalProducts
+        -int productsInAlert
+        -int totalStock
+        -float avgStock
+        +getKPIs() Object
+        +getAlerts() Array
+        +generateReport(dateFrom, dateTo)
+    }
+
+    class AuthService {
+        +register(username, password, role)
+        +login(username, password)
+        +validateToken(token)
+        +refreshToken(token)
+        +logout(userId)
+    }
+
+    class ProductService {
+        +getAll() Product[]
+        +getById(id) Product
+        +create(data) Product
+        +update(id, data) Product
+        +delete(id)
+        +search(query) Product[]
+    }
+
+    class InventoryService {
+        +addMovement(productId, userId, type, quantity, reason)
+        +getMovements(filters) Movement[]
+        +getHistory(productId) Movement[]
+        +getMovementById(id) Movement
+    }
+
+    User "1" --> "n" InventoryMovement : crée
+    Product "1" --> "n" InventoryMovement : a un historique
+    InventoryMovement --> StockCalculator : utilisé par
+    Product --> StockCalculator : évalué par
+    Dashboard --> StockCalculator : dépend de
+    AuthService --> User : gère
+    ProductService --> Product : gère
+    InventoryService --> InventoryMovement : gère
+
+    style User fill:#e3f2fd
+    style Product fill:#f3e5f5
+    style InventoryMovement fill:#e8f5e9
+    style StockCalculator fill:#fff9c4
+    style Dashboard fill:#fce4ec
+    style AuthService fill:#f1f8e9
+    style ProductService fill:#f1f8e9
+    style InventoryService fill:#f1f8e9

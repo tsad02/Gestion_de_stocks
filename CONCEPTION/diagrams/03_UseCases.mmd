@@ -1,0 +1,56 @@
+graph TB
+    subgraph "Système de Gestion de Stocks"
+        UC1["📦 Consulter Produits"]
+        UC2["➕ Ajouter Produit"]
+        UC3["📝 Modifier Produit"]
+        UC4["🗑️ Supprimer Produit"]
+        UC5["➕ Ajouter Mouvement"]
+        UC6["📋 Consulter Mouvements"]
+        UC7["⚠️ Consulter Alertes"]
+        UC8["📊 Voir Dashboard"]
+        UC9["🔐 S'authentifier"]
+        UC10["👤 Gérer Profil"]
+    end
+
+    subgraph "Acteurs"
+        EMPLOYE["👨‍💼 EMPLOYE<br/>(Lecture seule)"]
+        RESPONSABLE["👔 RESPONSABLE<br/>(Admin)"]
+        ADMIN["🔑 Administrateur"]
+    end
+
+    EMPLOYE -->|utilise| UC9
+    RESPONSABLE -->|utilise| UC9
+
+    EMPLOYE -->|utilise| UC1
+    RESPONSABLE -->|utilise| UC1
+    EMPLOYE -->|utilise| UC6
+    RESPONSABLE -->|utilise| UC6
+    EMPLOYE -->|utilise| UC7
+    RESPONSABLE -->|utilise| UC7
+    EMPLOYE -->|utilise| UC8
+    RESPONSABLE -->|utilise| UC8
+
+    RESPONSABLE -->|utilise| UC2
+    RESPONSABLE -->|utilise| UC3
+    RESPONSABLE -->|utilise| UC4
+    RESPONSABLE -->|utilise| UC5
+
+    EMPLOYE -->|utilise| UC10
+    RESPONSABLE -->|utilise| UC10
+
+    ADMIN -->|gère| EMPLOYE
+    ADMIN -->|gère| RESPONSABLE
+
+    style EMPLOYE fill:#e1f5ff
+    style RESPONSABLE fill:#fff3e0
+    style ADMIN fill:#f3e5f5
+    style UC1 fill:#c8e6c9
+    style UC2 fill:#ffccbc
+    style UC3 fill:#ffccbc
+    style UC4 fill:#ffccbc
+    style UC5 fill:#ffccbc
+    style UC6 fill:#c8e6c9
+    style UC7 fill:#fff9c4
+    style UC8 fill:#b3e5fc
+    style UC9 fill:#d1c4e9
+    style UC10 fill:#d1c4e9

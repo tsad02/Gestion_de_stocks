@@ -20,4 +20,11 @@ const authorize = (...allowedRoles) => {
     };
 };
 
+/**
+ * Alias pour dashboardAccess - même logique que authorize
+ */
+const dashboardAccess = (...allowedRoles) => authorize(...allowedRoles);
+
 module.exports = authorize;
+module.exports.authorize = authorize;
+module.exports.dashboardAccess = dashboardAccess;

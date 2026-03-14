@@ -53,6 +53,10 @@ async function addProduct(req, res, next) {
     if (min_threshold !== undefined && min_threshold < 0) {
       return res.status(400).json({ error: "Le seuil minimal (min_threshold) ne peut pas être négatif" });
     }
+
+    if (quantity !== undefined && quantity < 0) {
+      return res.status(400).json({ error: "La quantité ne peut pas être négative" });
+    }
     // ----------------------------
 
     const result = await pool.query(`
@@ -82,6 +86,10 @@ async function updateProduct(req, res, next) {
 
     if (min_threshold !== undefined && min_threshold < 0) {
       return res.status(400).json({ error: "Le seuil minimal (min_threshold) ne peut pas être négatif" });
+    }
+
+    if (quantity !== undefined && quantity < 0) {
+      return res.status(400).json({ error: "La quantité ne peut pas être négative" });
     }
     // ------------------
 

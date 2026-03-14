@@ -1,0 +1,31 @@
+erDiagram
+    USERS ||--o{ INVENTORY_MOVEMENTS : creates
+    PRODUCTS ||--o{ INVENTORY_MOVEMENTS : tracks
+    
+    USERS {
+        int id PK
+        string username UK
+        string password
+        string role
+        timestamp created_at
+    }
+    
+    PRODUCTS {
+        int id PK
+        string name
+        string category
+        string unit
+        int min_threshold
+        int quantity
+        timestamp created_at
+    }
+    
+    INVENTORY_MOVEMENTS {
+        int id PK
+        int product_id FK
+        int user_id FK
+        string type
+        int quantity
+        string reason
+        timestamp created_at
+    }

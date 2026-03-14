@@ -1,0 +1,73 @@
+sequenceDiagram
+    participant Client as 🔐 RESPONSABLE
+    participant API as 🔗 Express API
+    participant Auth as 🔐 JWT Middleware
+    participant Role as 👔 RBAC Middleware
+    participant Validator as ✓ Validator
+    participant Inventory as 📊 InventoryService
+    participant Calculator as 🧮 StockCalculator
+    participant DB as 💾 PostgreSQL
+    participant Alert as ⚠️ Alert Service
+
+    Client->>API: POST /api/inventory-movements<br/>{ product_id, type, quantity, reason }
+
+    API->>Auth: verifyToken(token)
+    activate Auth
+    Auth-->>API: ✅ user
+
+    API->>Role: checkRole("RESPONSABLE")
+    activate Role
+    Role-->>API: ✅ Authorized
+    deactivate Role
+
+    API->>Validator: validateMovement(data)
+    activate Validator
+    
+    alt Validation OK
+        Validator->>DB: SELECT * FROM products WHERE id = ?
+        activate DB
+        DB-->>Validator: product exists ✅
+        deactivate DB
+        
+        Validator-->>API: ✅ true
+        deactivate Validator
+
+        API->>Inventory: addMovement(product_id, user_id, type, quantity, reason)
+        activate Inventory
+
+        Inventory->>DB: INSERT INTO inventory_movements
+        activate DB
+        DB-->>Inventory: movement_id = 567
+        deactivate DB
+
+        Inventory->>Calculator: calculateStock(product_id)
+        activate Calculator
+        
+        Calculator->>DB: SELECT SUM(...) FROM inventory_movements
+        activate DB
+        DB-->>Calculator: stock_actuel = 45
+        deactivate DB
+        
+        Calculator-->>Inventory: 45
+        deactivate Calculator
+
+        Inventory->>Alert: checkAlert(product_id, 45, min_threshold)
+        activate Alert
+        
+        alt Stock <= Threshold
+            Alert->>Alert: Génère alerte
+            Alert-->>Inventory: ⚠️ Alert
+        else Stock OK
+            Alert-->>Inventory: ✅ No alert
+        end
+        deactivate Alert
+
+        Inventory-->>API: ✅ {movement_id, stock_after: 45}
+        deactivate Inventory
+
+        API-->>Client: 🟢 201 Created
+    else Validation KO
+        Validator-->>API: ❌
+        deactivate Validator
+        API-->>Client: 🔴 400 Bad Request
+    end

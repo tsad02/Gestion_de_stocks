@@ -1,0 +1,43 @@
+sequenceDiagram
+    participant Client as 👤 Client
+    participant API as 🔗 Express API
+    participant Auth as 🔐 AuthService
+    participant DB as 💾 PostgreSQL
+    participant JWT as 🔑 JWT Generator
+
+    Client->>API: POST /api/auth/login<br/>{ username, password }
+    
+    API->>Auth: login(username, password)
+    activate Auth
+    
+    Auth->>DB: SELECT * FROM users<br/>WHERE username = ?
+    activate DB
+    DB-->>Auth: user record ou NULL
+    deactivate DB
+    
+    alt User trouvé
+        Auth->>Auth: bcrypt.compare(password, hashedPwd)
+        
+        alt Password correct
+            Auth->>JWT: generateJWT(user.id, user.role)
+            activate JWT
+            JWT-->>Auth: token = "eyJhbGc..."
+            deactivate JWT
+            
+            Auth-->>API: ✅ { token, role, username }
+            deactivate Auth
+            
+            API-->>Client: 🟢 200 OK<br/>{ token, role, username }
+            Client->>Client: localStorage.setItem('token', token)
+        else Password incorrect
+            Auth-->>API: ❌ { error: "Invalid password" }
+            deactivate Auth
+            
+            API-->>Client: 🔴 401 Unauthorized
+        end
+    else User not found
+        Auth-->>API: ❌ { error: "User not found" }
+        deactivate Auth
+        
+        API-->>Client: 🔴 401 Unauthorized
+    end

@@ -1,0 +1,81 @@
+<svg width="1400" height="1200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond blanc -->
+  <rect width="1400" height="1200" fill="white"/>
+  
+  <!-- Titre -->
+  <text x="700" y="50" font-size="32" font-weight="bold" text-anchor="middle" fill="black">
+    PLANNING COMPLET - GESTION DE STOCKS
+  </text>
+  <text x="700" y="90" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">
+    10 SEMAINES DE DÉVELOPPEMENT
+  </text>
+  
+  <!-- SEMAINE 1 -->
+  <rect x="20" y="120" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="155" font-size="16" font-weight="bold" fill="black">📋 SEMAINE 1: 26/01-01/02</text>
+  <text x="40" y="180" font-size="12" fill="#333">Analyse des besoins → Cahier des charges</text>
+  <text x="1340" y="160" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 2 -->
+  <rect x="20" y="210" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="245" font-size="16" font-weight="bold" fill="black">📐 SEMAINE 2: 02/02-08/02</text>
+  <text x="40" y="270" font-size="12" fill="#333">Conception technique → Modèle de données</text>
+  <text x="1340" y="250" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 3 -->
+  <rect x="20" y="300" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="335" font-size="16" font-weight="bold" fill="black">⚙️ SEMAINE 3: 09/02-15/02</text>
+  <text x="40" y="360" font-size="12" fill="#333">Mise en place backend → API initiale</text>
+  <text x="1340" y="340" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 4 -->
+  <rect x="20" y="390" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="425" font-size="16" font-weight="bold" fill="black">🔐 SEMAINE 4: 16/02-22/02</text>
+  <text x="40" y="450" font-size="12" fill="#333">Authentification & rôles → Sécurité fonctionnelle</text>
+  <text x="1340" y="430" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 5 -->
+  <rect x="20" y="480" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="515" font-size="16" font-weight="bold" fill="black">📦 SEMAINE 5: 23/02-01/03</text>
+  <text x="40" y="540" font-size="12" fill="#333">Gestion des produits → CRUD Produits</text>
+  <text x="1340" y="520" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 6 -->
+  <rect x="20" y="570" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="605" font-size="16" font-weight="bold" fill="black">📊 SEMAINE 6: 02/03-08/03</text>
+  <text x="40" y="630" font-size="12" fill="#333">Gestion des stocks → Entrées / Sorties</text>
+  <text x="1340" y="610" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 7 -->
+  <rect x="20" y="660" width="1360" height="80" fill="#86efac" stroke="black" stroke-width="2"/>
+  <text x="40" y="695" font-size="16" font-weight="bold" fill="black">📈 SEMAINE 7: 09/03-15/03</text>
+  <text x="40" y="720" font-size="12" fill="#333">Tableau de bord → Dashboard React</text>
+  <text x="1340" y="700" font-size="18" text-anchor="end" fill="green">✅ COMPLÉTÉE</text>
+  
+  <!-- SEMAINE 8 -->
+  <rect x="20" y="750" width="1360" height="80" fill="#fcd34d" stroke="black" stroke-width="2"/>
+  <text x="40" y="785" font-size="16" font-weight="bold" fill="black">🚨 SEMAINE 8: 16/03-22/03</text>
+  <text x="40" y="810" font-size="12" fill="#333">Alertes & logique métier → Notifications</text>
+  <text x="1340" y="790" font-size="18" text-anchor="end" fill="#d97706">⏳ EN COURS</text>
+  
+  <!-- SEMAINE 9 -->
+  <rect x="20" y="840" width="1360" height="80" fill="#fca5a5" stroke="black" stroke-width="2"/>
+  <text x="40" y="875" font-size="16" font-weight="bold" fill="black">🧪 SEMAINE 9: 23/03-29/03</text>
+  <text x="40" y="900" font-size="12" fill="#333">Tests & amélioration UI → Version bêta</text>
+  <text x="1340" y="880" font-size="18" text-anchor="end" fill="#d97706">⏳ À VENIR</text>
+  
+  <!-- SEMAINE 10 -->
+  <rect x="20" y="930" width="1360" height="80" fill="#fca5a5" stroke="black" stroke-width="2"/>
+  <text x="40" y="965" font-size="16" font-weight="bold" fill="black">🚀 SEMAINE 10: 30/03-05/04</text>
+  <text x="40" y="990" font-size="12" fill="#333">Déploiement & documentation → Version finale</text>
+  <text x="1340" y="970" font-size="18" text-anchor="end" fill="#d97706">⏳ À VENIR</text>
+  
+  <!-- Légende -->
+  <rect x="200" y="1050" width="1000" height="80" fill="#fffacd" stroke="black" stroke-width="2"/>
+  <text x="700" y="1085" font-size="14" font-weight="bold" text-anchor="middle" fill="black">
+    ✅ COMPLÉTÉE (7/10 semaines) | ⏳ EN COURS / À VENIR (3/10 semaines)
+  </text>
+  <text x="700" y="1110" font-size="12" text-anchor="middle" fill="#333">
+    Status au 12 mars 2026 - Projet en bonne progression
+  </text>
+</svg>

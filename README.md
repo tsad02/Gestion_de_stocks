@@ -1,57 +1,53 @@
-# 📦 Système de Gestion de Stocks - Backend (Semaine 6)
+# 🍽️ Gestion de Stocks - Tableau de Bord Semaine 7
 
-Ce projet est une API REST robuste pour la gestion de stocks, développée avec **Node.js**, **Express** et **PostgreSQL**. Il inclut une authentification sécurisée et une gestion des droits par rôles.
+## 📊 Projet Complètement Fonctionnel
 
-## 🚀 Fonctionnalités (Semaine 6)
+Bienvenue! Ce projet est un **système de gestion de stocks de restaurant** construit avec:
+- **Backend**: Node.js + Express.js + PostgreSQL 18.1
+- **Frontend**: React 18 + Tailwind CSS + Vite (NEW - Week 7)
+- **Database**: 21 tables/vues PostgreSQL
+- **Authentication**: JWT + RBAC (2 roles)
 
-### 🔐 Authentification & Sécurité
-- **Inscription & Connexion** : Gestion complète avec hachage de mot de passe (`bcrypt`) et jetons **JWT**.
-- **Contrôle d'Accès (RBAC)** : 
-  - **RESPONSABLE** : Accès complet (Ajout, Modification, Suppression).
-  - **EMPLOYE** : Consultation uniquement (Lecture).
+---
 
-### 📦 Gestion des Produits (CRUD)
-- **Lister** tous les produits.
-- **Détails** d'un produit spécifique via son ID.
-- **Ajouter** de nouveaux produits (Nom, Catégorie, Unité, Seuil, Quantité).
-- **Modifier** les informations ou le niveau de stock.
-- **Supprimer** des articles.
-- **Validation** : Protection contre les noms vides et les seuils négatifs.
+## 🚀 Démarrage Rapide
 
-## 🛠️ Installation & Configuration
+### Option 1: Script Automatisé (Recommandé)
+```bash
+# Double-cliquer sur:
+start-dev.bat
+```
 
-1. **Installation des dépendances** :
-   ```bash
-   cd backend
-   npm install
-   ```
+### Option 2: Manuel (2 terminaux)
+```bash
+# Terminal 1 - Backend
+cd backend
+npm run dev
 
-2. **Variables d'environnement** :
-   Créez un fichier `.env` dans le dossier `backend` :
-   ```env
-   PORT=3000
-   DATABASE_URL=postgres://utilisateur:motdepasse@localhost:5432/nom_base
-   JWT_SECRET=votre_cle_secrete
-   JWT_EXPIRE=8h
-   ```
+# Terminal 2 - Frontend
+cd frontend
+npm run dev
+```
 
-3. **Initialisation de la base de données** :
-   ```bash
-   node src/db/init-db.js
-   ```
+**Résultat**: Dashboard s'ouvre on http://localhost:5173
 
-4. **Lancement du serveur** :
-   ```bash
-   npm run dev
-   ```
+---
 
-## 📚 Documentation Supplémentaire
-Pour des instructions détaillées sur les tests avec Postman et le fonctionnement technique, consultez la documentation générée ici :
-[Walkthrough.md](file:///C:/Users/PC/.gemini/antigravity/brain/ec8308dd-713a-4f6d-903c-e68a3c7c219a/walkthrough.md)
+## 📚 Documentation Complète
+
+Pour plus de détails, consulter:
+
+- **[STARTUP_GUIDE.md](STARTUP_GUIDE.md)** - Étapes de démarrage détaillées
+- **[SEMAINE_7.md](SEMAINE_7.md)** - Documentation technique complète
+- **[SEMAINE_7_RESUME.md](SEMAINE_7_RESUME.md)** - Résumé du travail réalisé
+- **[CONCEPTION/](CONCEPTION/)** - Architecture & diagrammes UML (Semaines 2-6)
+
+---
 
 ## 📁 Structure du Projet
-- `src/app.js` : Configuration Express.
-- `src/controllers/` : Logique métier (Auth & Produits).
-- `src/middleware/` : Sécurité JWT et vérification des Rôles.
-- `src/routes/` : Définition des points d'entrée de l'API.
-- `src/db/` : Configuration et scripts SQL.
+- `backend/` : API Node.js/Express (Semaines 2-6)
+- `frontend/` : App React + Vite (Semaine 7 - NEW!)
+- `database/` : Schéma SQL PostgreSQL
+- `CONCEPTION/` : Documentation architecture & diagrammes
+- `.env` : Variables d'environnement
+- `start-dev.bat` : Script démarrage rapide

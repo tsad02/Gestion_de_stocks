@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Diagrammes - Gestion de Stocks</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .diagrams-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .diagram-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+        
+        .diagram-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        .diagram-card h3 {
+            color: #764ba2;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 5px;
+            color: #1565c0;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #1565c0;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+        
+        .section-title {
+            color: white;
+            font-size: 2em;
+            margin-top: 60px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .diagram-card {
+                padding: 20px;
+            }
+        }
+        
+        .print-button {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+        
+        .print-button:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .header {
+                color: black;
+                text-shadow: none;
+            }
+            .section-title {
+                color: #667eea;
+                text-shadow: none;
+            }
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Conception Technique – Gestion de Stocks</h1>
+            <p>Diagrammes UML & Architecture - Semaine 2</p>
+        </div>
+        
+        <center>
+            <button class="print-button" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button>
+        </center>
+        
+        <!-- ERD -->
+        <div class="section-title">🔗 1. Diagramme Entité-Relation (ERD)</div>
+        <div class="diagrams-grid">
+            <div class="diagram-card">
+                <h2>📊 Tables & Relations</h2>
+                <h3>Diagramme Entité-Relation / ER Diagram</h3>
+                <div class="mermaid">
+erDiagram
+    USERS ||--o{ INVENTORY_MOVEMENTS : creates
+    PRODUCTS ||--o{ INVENTORY_MOVEMENTS : tracks
+    
+    USERS {
+        int id PK
+        string username UK
+        string password
+        string role
+        timestamp created_at
+    }
+    
+    PRODUCTS {
+        int id PK
+        string name
+        string category
+        string unit
+        int min_threshold
+        int quantity
+        timestamp created_at
+    }
+    
+    INVENTORY_MOVEMENTS {
+        int id PK
+        int product_id FK
+        int user_id FK
+        string type
+        int quantity
+        string reason
+        timestamp created_at
+    }
+                </div>
+                <div class="instructions">
+                    <h3>📌 Points clés :</h3>
+                    <ul>
+                        <li>1 USER → N INVENTORY_MOVEMENTS (composition)</li>
+                        <li>1 PRODUCT → N INVENTORY_MOVEMENTS (historique)</li>
+                        <li>Stock calculé dynamiquement (pas dénormalisé)</li>
+                        <li>FK RESTRICT : impossible de supprimer avec historique</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Use Cases -->
+        <div class="section-title">👥 2. Diagramme de Cas d'Utilisation</div>
+        <div class="diagrams-grid">
+            <div class="diagram-card">
+                <h2>📋 Use Cases & Acteurs</h2>
+                <h3>Cas d'utilisation du système</h3>
+                <div class="mermaid">
+graph TB
+    subgraph SYSTEM["🔒 Système de Gestion de Stocks"]
+        UC1["📦 Consulter Produits"]
+        UC2["➕ Ajouter Produit"]
+        UC3["📝 Modifier Produit"]
+        UC4["🗑️ Supprimer Produit"]
+        UC5["➕ Ajouter Mouvement"]
+        UC6["📋 Consulter Mouvements"]
+        UC7["⚠️ Consulter Alertes"]
+        UC8["📊 Voir Dashboard"]
+        UC9["🔐 S'authentifier"]
+    end
+
+    subgraph ACTORS["👥 Acteurs"]
+        EMPLOYE["👨‍💼 EMPLOYE<br/>(Lecture)"]
+        RESPONSABLE["👔 RESPONSABLE<br/>(Admin)"]
+    end
+
+    EMPLOYE -->|execute| UC9
+    RESPONSABLE -->|execute| UC9
+    EMPLOYE -->|execute| UC1
+    RESPONSABLE -->|execute| UC1
+    EMPLOYE -->|execute| UC6
+    RESPONSABLE -->|execute| UC6
+    EMPLOYE -->|execute| UC7
+    RESPONSABLE -->|execute| UC7
+    EMPLOYE -->|execute| UC8
+    RESPONSABLE -->|execute| UC8
+    RESPONSABLE -->|execute| UC2
+    RESPONSABLE -->|execute| UC3
+    RESPONSABLE -->|execute| UC4
+    RESPONSABLE -->|execute| UC5
+
+    style SYSTEM fill:#f0f7ff
+    style ACTORS fill:#fff9c4
+    style EMPLOYE fill:#c5e1a5
+    style RESPONSABLE fill:#ffb74d
+                </div>
+                <div class="instructions">
+                    <h3>🎯 Résumé :</h3>
+                    <ul>
+                        <li><strong>EMPLOYE</strong> : Consultation lecture seule</li>
+                        <li><strong>RESPONSABLE</strong> : Accès complet (CRUD + mouvements)</li>
+                        <li><strong>Authentification JWT</strong> : Obligatoire pour tous</li>
+                        <li><strong>9 use cases</strong> couvrant tous les besoins</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Classes -->
+        <div class="section-title">🏗️ 3. Diagramme de Classes</div>
+        <div class="diagrams-grid">
+            <div class="diagram-card">
+                <h2>📐 Architecture Logique</h2>
+                <h3>Class Diagram UML</h3>
+                <div class="mermaid">
+classDiagram
+    class User {
+        -int id
+        -string username
+        -string password
+        -string role
+        +register()
+        +login()
+        +generateJWT()
+    }
+
+    class Product {
+        -int id
+        -string name
+        -string category
+        -int minThreshold
+        +create()
+        +update()
+        +delete()
+        +getStockActuel()
+    }
+
+    class InventoryMovement {
+        -int id
+        -int productId FK
+        -int userId FK
+        -string type
+        -int quantity
+        +create()
+        +getMovementsByProduct()
+    }
+
+    class AuthService {
+        +register()
+        +login()
+        +validateToken()
+    }
+
+    class ProductService {
+        +getAll()
+        +create()
+        +update()
+        +delete()
+    }
+
+    class InventoryService {
+        +addMovement()
+        +getHistory()
+    }
+
+    class StockCalculator {
+        +calculateStock()
+        +checkAlerts()
+    }
+
+    User "1" --> "n" InventoryMovement
+    Product "1" --> "n" InventoryMovement
+    InventoryMovement --> StockCalculator
+    AuthService --> User
+    ProductService --> Product
+    InventoryService --> InventoryMovement
+
+    style User fill:#e3f2fd
+    style Product fill:#f3e5f5
+    style InventoryMovement fill:#e8f5e9
+    style AuthService fill:#f1f8e9
+    style ProductService fill:#f1f8e9
+    style InventoryService fill:#f1f8e9
+    style StockCalculator fill:#fff9c4
+                </div>
+                <div class="instructions">
+                    <h3>🔗 Relations :</h3>
+                    <ul>
+                        <li>7 classes métier + 3 services</li>
+                        <li>Composition 1:N entre User/Product et InventoryMovement</li>
+                        <li>Service Pattern pour logique métier</li>
+                        <li>Repository Pattern pour abstraction DB</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sequences -->
+        <div class="section-title">🔄 4. Diagrammes de Séquence</div>
+        
+        <div class="diagrams-grid">
+            <div class="diagram-card">
+                <h2>🔐 Flux 1 : Authentification (Login)</h2>
+                <h3>POST /api/auth/login</h3>
+                <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant API
+    participant Auth
+    participant DB
+    participant JWT
+
+    Client->>API: POST login
+    API->>Auth: login(username, pwd)
+    Auth->>DB: SELECT user
+    alt User found & pwd valid
+        Auth->>JWT: generateJWT()
+        JWT-->>Auth: token
+        Auth-->>API: ✅ token
+        API-->>Client: 🟢 200 OK
+    else Invalid
+        Auth-->>API: ❌ 401
+        API-->>Client: 🔴 401 Unauthorized
+    end
+                </div>
+            </div>
+            
+            <div class="diagram-card">
+                <h2>📦 Flux 2 : Créer Produit (RESPONSABLE)</h2>
+                <h3>POST /api/products</h3>
+                <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant API
+    participant Auth
+    participant Role
+    participant Product
+    participant DB
+
+    Client->>API: POST /products
+    API->>Auth: Verify JWT
+    Auth-->>API: ✅ user
+    API->>Role: Check RESPONSABLE
+    alt Authorized
+        API->>Product: create()
+        Product->>DB: INSERT product
+        DB-->>Product: id=123
+        Product-->>API: ✅
+        API-->>Client: 🟢 201 Created
+    else Forbidden
+        API-->>Client: 🔴 403 Forbidden
+    end
+                </div>
+            </div>
+            
+            <div class="diagram-card">
+                <h2>📊 Flux 3 : Ajouter Mouvement Stock</h2>
+                <h3>POST /api/inventory-movements (complexe)</h3>
+                <div class="mermaid">
+sequenceDiagram
+    participant Client as 🔐 RESPONSABLE
+    participant API as API
+    participant Auth as Auth
+    participant Inventory as Inventory
+    participant Calculator as Calculator
+    participant Alert as Alert
+
+    Client->>API: POST mouvement
+    API->>Auth: Verify + Check RESPONSABLE
+    API->>Inventory: addMovement()
+    Inventory->>Inventory: Validate
+    Inventory->>Calculator: calculateStock()
+    Calculator-->>Inventory: stock=45
+    Inventory->>Alert: checkAlert()
+    alt Stock <= Threshold
+        Alert-->>Inventory: ⚠️ Alert triggered
+    else OK
+        Alert-->>Inventory: ✅ No alert
+    end
+    Inventory-->>API: ✅ movement created
+    API-->>Client: 🟢 201
+                </div>
+            </div>
+            
+            <div class="diagram-card">
+                <h2>📈 Flux 4 : Consultation Dashboard</h2>
+                <h3>GET /api/dashboard</h3>
+                <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant API
+    participant Cache
+    participant DB
+
+    Client->>API: GET /dashboard
+    API->>Cache: Cherche dashboard_kpi
+    alt Cache found ✅
+        Cache-->>API: Data (1 min)
+        API-->>Client: 🟢 200 OK
+    else Cache miss
+        Cache-->>API: null
+        API->>DB: SELECT v_dashboard_json
+        DB-->>API: KPI data
+        API->>Cache: set(data, 60s)
+        API-->>Client: 🟢 200 OK + data
+    end
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Table -->
+        <div class="section-title">📋 5. Résumé des Endpoints</div>
+        <div class="diagram-card">
+            <h2>🔗 API REST Complète</h2>
+            <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
+                <thead style="background: #667eea; color: white;">
+                    <tr>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;"><strong>Endpoint</strong></th>
+                        <th style="padding: 12px; text-align: center; border: 1px solid #ddd;"><strong>Méthode</strong></th>
+                        <th style="padding: 12px; text-align: center; border: 1px solid #ddd;"><strong>Auth</strong></th>
+                        <th style="padding: 12px; text-align: center; border: 1px solid #ddd;"><strong>RBAC</strong></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #f5f5f5;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/auth/login</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">POST</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">❌</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">-</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/auth/register</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">POST</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">❌</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">-</td>
+                    </tr>
+                    <tr style="background: #f5f5f5;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/products</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">GET/POST</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">✅</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">POST: RESP</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/products/:id</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">PUT/DELETE</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">✅</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">RESP</td>
+                    </tr>
+                    <tr style="background: #f5f5f5;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/inventory-movements</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">GET/POST</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">✅</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">POST: RESP</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/inventory-movements/product/:id</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">GET</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">✅</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">ALL</td>
+                    </tr>
+                    <tr style="background: #f5f5f5;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><code>/api/dashboard</code></td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">GET</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">✅</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">ALL</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="section-title">📊 6. Statistiques Conception</div>
+        <div class="diagrams-grid">
+            <div class="diagram-card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 5px;">
+                    <h3 style="color: #1565c0; margin-bottom: 10px;">📊 Base de Données</h3>
+                    <ul style="text-align: left; list-style: none;">
+                        <li>📋 <strong>3 Tables</strong></li>
+                        <li>👁️ <strong>5 Vues</strong></li>
+                        <li>🔤 <strong>2 Types Enum</strong></li>
+                        <li>📇 <strong>8 Indices</strong></li>
+                        <li>🔗 <strong>2 FK</strong></li>
+                        <li>✓ <strong>2 Contraintes</strong></li>
+                    </ul>
+                </div>
+                <div style="background: #f3e5f5; padding: 20px; border-radius: 5px;">
+                    <h3 style="color: #6a1b9a; margin-bottom: 10px;">🏗️ Logique Métier</h3>
+                    <ul style="text-align: left; list-style: none;">
+                        <li>👥 <strong>3 Acteurs</strong></li>
+                        <li>📋 <strong>9 Use Cases</strong></li>
+                        <li>🔐 <strong>7 Classes</strong></li>
+                        <li>🔄 <strong>3 Services</strong></li>
+                        <li>🔀 <strong>10 Flux</strong></li>
+                        <li>✅ <strong>100% Documenté</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>📄 Conception Technique – Gestion de Stocks</p>
+            <p>Version 1.0 | Document Généré - 11/03/2026 | ✅ COMPLET</p>
+        </div>
+    </div>
+    
+    <script>
+        // Initialiser mermaid
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        mermaid.contentLoaded();
+    </script>
+</body>
+</html>
