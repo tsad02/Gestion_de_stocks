@@ -1,88 +1,150 @@
 import React from 'react';
 
 /**
- * Composant Recent Movements - Style Delisas
+ * Composant RecentMovements - Affiche les derniers mouvements de stock
+ * Design moderne, professionnel et robuste.
  */
-const RecentMovements = ({ movements = [], isEmbedded = false }) => {
-  const getStatusBadge = (type) => {
+const RecentMovements = ({ movements = [] }) => {
+  const getMovementIcon = (type) => {
+    switch (type) {
+      case 'ENTREE': return '📥';
+      case 'SORTIE': return '📤';
+      case 'PERTE': return '🗑️';
+      default: return '📦';
+    }
+  };
+
+  const getMovementColor = (type) => {
     switch (type) {
       case 'ENTREE':
-        return <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-semibold">Stock In</span>;
+        return { 
+          bg: 'bg-emerald-50', 
+          text: 'text-emerald-700', 
+          badge: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+        };
       case 'SORTIE':
-        return <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold">Ordered</span>;
+        return { 
+          bg: 'bg-blue-50', 
+          text: 'text-blue-700', 
+          badge: 'bg-blue-100 text-blue-800 border-blue-200' 
+        };
       case 'PERTE':
-        return <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-semibold">Loss</span>;
+        return { 
+          bg: 'bg-rose-50', 
+          text: 'text-rose-700', 
+          badge: 'bg-rose-100 text-rose-800 border-rose-200' 
+        };
       default:
-        return <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">{type}</span>;
+        return { 
+          bg: 'bg-gray-50', 
+          text: 'text-gray-700', 
+          badge: 'bg-gray-100 text-gray-800 border-gray-200' 
+        };
     }
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Date inconnue';
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('fr-FR', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (e) {
+      return 'Format invalide';
+    }
   };
 
-  const content = (
-    <table className="w-full text-sm text-left whitespace-nowrap">
-      <thead>
-        <tr className="text-gray-400 font-medium">
-          <th className="py-3 px-4 w-10"><input type="checkbox" className="rounded text-blue-500 border-gray-300 pointer-events-none" /></th>
-          <th className="py-3 px-4">Tracking ID</th>
-          <th className="py-3 px-4">Category</th>
-          <th className="py-3 px-4">Product Name</th>
-          <th className="py-3 px-4">Delivery Time</th>
-          <th className="py-3 px-4">Requested By</th>
-          <th className="py-3 px-4">Quantity</th>
-          <th className="py-3 px-4 text-center">Status</th>
-          <th className="py-3 px-4 w-10"></th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-50">
-        {!movements || movements.length === 0 ? (
-          <tr>
-            <td colSpan="9" className="text-center py-8 text-gray-500">Aucun mouvement récent</td>
-          </tr>
-        ) : (
-          movements.slice(0, 10).map((m) => (
-            <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-              <td className="py-4 px-4"><input type="checkbox" className="rounded text-blue-500 border-gray-300" /></td>
-              <td className="py-4 px-4 text-gray-500">#TRK-{m.id.toString().padStart(5, '0')}</td>
-              <td className="py-4 px-4 text-gray-900 flex items-center">
-                <span className="text-lg mr-2">{m.type === 'ENTREE' ? '🇨🇦' : '🇺🇸'}</span> 
-                {m.type === 'PERTE' ? 'Waste' : 'Standard'}
-              </td>
-              <td className="py-4 px-4 font-medium text-gray-900">{m.product_name}</td>
-              <td className="py-4 px-4 text-gray-500">{formatDate(m.timestamp)}</td>
-              <td className="py-4 px-4 text-gray-700 flex items-center">
-                 <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs mr-2">
-                   {m.username.charAt(0).toUpperCase()}
-                 </div>
-                 {m.username}
-              </td>
-              <td className="py-4 px-4 font-semibold text-gray-900">{m.quantity}</td>
-              <td className="py-4 px-4 text-center">{getStatusBadge(m.type)}</td>
-              <td className="py-4 px-4 text-gray-400 cursor-pointer hover:text-gray-600">⋮</td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  );
-
-  if (isEmbedded) {
-    return content;
+  if (!movements || movements.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div className="text-5xl mb-4">📋</div>
+        <h3 className="text-lg font-bold text-gray-900 mb-1">Aucun mouvement</h3>
+        <p className="text-gray-500">L'historique des mouvements apparaîtra ici.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Liste des Expéditions</h2>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+          <span className="p-2 bg-white rounded-lg shadow-sm">📋</span>
+          Mouvements Récents
+        </h2>
+        <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 shadow-sm">
+          {movements.length} derniers
+        </span>
+      </div>
+
       <div className="overflow-x-auto">
-        {content}
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-gray-50/30 text-gray-500 uppercase text-[10px] font-bold tracking-wider divide-x divide-gray-100">
+              <th className="px-6 py-4">Type</th>
+              <th className="px-6 py-4">Produit</th>
+              <th className="px-6 py-4">Catégorie</th>
+              <th className="px-6 py-4 text-center">Qté</th>
+              <th className="px-6 py-4">Utilisateur</th>
+              <th className="px-6 py-4">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {movements.map((m, idx) => {
+              const theme = getMovementColor(m.type);
+              return (
+                <tr key={m.id || idx} className="hover:bg-gray-50/80 transition-all group">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl opacity-80 group-hover:scale-110 transition-transform">
+                        {getMovementIcon(m.type)}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold border ${theme.badge} uppercase tracking-tight`}>
+                        {m.type}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="font-semibold text-gray-900 line-clamp-1">{m.product_name}</span>
+                    {m.reason && <p className="text-[10px] text-gray-400 mt-0.5 italic">{m.reason}</p>}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">
+                      {m.category || m.product_category || 'N/A'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`text-sm font-bold ${theme.text}`}>
+                      {m.type === 'ENTREE' ? '+' : '-'}{m.quantity}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600 border border-white shadow-sm">
+                        {(m.username || m.created_by || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-xs font-medium text-gray-700">{m.username || m.created_by || 'Utilisateur'}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-xs text-gray-500 font-medium">
+                      {formatDate(m.timestamp || m.created_at)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="px-6 py-4 bg-gray-50/30 border-t border-gray-100 text-center">
+        <button className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest">
+          Voir tout l'historique --&gt;
+        </button>
       </div>
     </div>
   );

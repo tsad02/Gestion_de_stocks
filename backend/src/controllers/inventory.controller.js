@@ -3,7 +3,6 @@ const pool = require("../db/pool");
 /**
  * POST /api/inventory-movements
  * Enregistrer un nouveau mouvement de stock
- * (Réservé au RESPONSABLE)
  */
 async function addMovement(req, res, next) {
   try {
@@ -33,7 +32,7 @@ async function addMovement(req, res, next) {
 
     // Vérifier que le produit existe
     const productExists = await pool.query(
-      "SELECT id FROM products WHERE id = $1",
+      "SELECT id, name FROM products WHERE id = $1",
       [product_id]
     );
     if (productExists.rows.length === 0) {
@@ -49,9 +48,12 @@ async function addMovement(req, res, next) {
       RETURNING id, product_id, user_id, type, quantity, reason, created_at
     `, [product_id, user_id, type.toUpperCase(), quantity, reason || null]);
 
+    const movement = result.rows[0];
+    movement.product_name = productExists.rows[0].name;
+
     res.status(201).json({
       message: "Mouvement enregistré avec succès",
-      movement: result.rows[0]
+      movement
     });
   } catch (error) {
     next(error);
@@ -67,7 +69,8 @@ async function listMovements(req, res, next) {
     const { product_id, type, limit = 50, offset = 0 } = req.query;
 
     let query = `
-      SELECT m.id, m.product_id, p.name AS product_name, m.user_id, u.username,
+      SELECT m.id, m.product_id, p.name AS product_name, p.category,
+             m.user_id, u.full_name,
              m.type, m.quantity, m.reason, m.created_at
       FROM inventory_movements m
       JOIN products p ON m.product_id = p.id
@@ -90,8 +93,22 @@ async function listMovements(req, res, next) {
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
+
+    // Also get total count for pagination
+    let countQuery = `SELECT COUNT(*) AS total FROM inventory_movements m WHERE 1=1`;
+    const countParams = [];
+    if (product_id) {
+      countQuery += ` AND m.product_id = $${countParams.length + 1}`;
+      countParams.push(product_id);
+    }
+    if (type) {
+      countQuery += ` AND m.type = $${countParams.length + 1}`;
+      countParams.push(type.toUpperCase());
+    }
+    const countResult = await pool.query(countQuery, countParams);
+
     res.json({
-      total: result.rowCount,
+      total: parseInt(countResult.rows[0].total),
       movements: result.rows
     });
   } catch (error) {
@@ -108,7 +125,8 @@ async function getMovementById(req, res, next) {
     const { id } = req.params;
 
     const result = await pool.query(`
-      SELECT m.id, m.product_id, p.name AS product_name, m.user_id, u.username,
+      SELECT m.id, m.product_id, p.name AS product_name, p.category,
+             m.user_id, u.full_name,
              m.type, m.quantity, m.reason, m.created_at
       FROM inventory_movements m
       JOIN products p ON m.product_id = p.id
@@ -150,7 +168,7 @@ async function getMovementsByProduct(req, res, next) {
 
     // Récupérer les mouvements
     const result = await pool.query(`
-      SELECT m.id, m.product_id, m.user_id, u.username, m.type, m.quantity, 
+      SELECT m.id, m.product_id, m.user_id, u.full_name, m.type, m.quantity, 
              m.reason, m.created_at
       FROM inventory_movements m
       JOIN users u ON m.user_id = u.id

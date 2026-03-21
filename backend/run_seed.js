@@ -21,8 +21,14 @@ async function runSQL() {
     await client.query(schemaSql);
     
     // 2. Lire et exécuter les données de seed Tim Hortons
-    const seedSql = fs.readFileSync('../database/tim_hortons_seed.sql', 'utf8');
-    console.log('Exécution de tim_hortons_seed.sql...');
+    const bcrypt = require('bcrypt');
+    const defaultHash = await bcrypt.hash('admin123', 10);
+    let seedSql = fs.readFileSync('../database/tim_hortons_seed.sql', 'utf8');
+    
+    // Remplacer le placeholder par le vrai hash
+    seedSql = seedSql.replace(/'dummy_hash'/g, `'${defaultHash}'`);
+    
+    console.log('Exécution de tim_hortons_seed.sql (avec password hashé)...');
     await client.query(seedSql);
 
     console.log('✅ Base de données mise à jour avec succès avec le catalogue Tim Hortons !');

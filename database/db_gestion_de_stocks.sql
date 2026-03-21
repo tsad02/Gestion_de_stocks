@@ -12,11 +12,11 @@ SET search_path TO public;
 -- 1) RESET (script rejouable)
 --    ⚠️ Supprime tables / vues / types si déjà existants
 -- ----------------------------------------------------------
-DROP VIEW IF EXISTS v_product_stock;
+DROP VIEW IF EXISTS v_product_stock CASCADE;
 
-DROP TABLE IF EXISTS inventory_movements;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS inventory_movements CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
 DROP TYPE IF EXISTS movement_type;
 DROP TYPE IF EXISTS user_role;
@@ -102,6 +102,8 @@ CREATE OR REPLACE VIEW v_alerts_critical_products AS
 SELECT
   product_id,
   product_name,
+  category,
+  unit,
   min_threshold,
   stock_actuel
 FROM v_product_stock
@@ -137,6 +139,7 @@ SELECT
   m.quantity,
   m.reason,
   p.name AS product_name,
+  p.category AS product_category,
   u.full_name AS done_by
 FROM inventory_movements m
 JOIN products p ON p.id = m.product_id

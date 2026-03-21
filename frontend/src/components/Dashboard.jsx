@@ -1,31 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import dashboardAPI from '../services/dashboardAPI';
 import KPICard from './KPICard';
+import CriticalProducts from './CriticalProducts';
+import MovementStats from './MovementStats';
 import RecentMovements from './RecentMovements';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
+/**
+ * Dashboard principal - Gestion de stocks
+ * Affiche KPI, produits critiques, statistiques mouvements et derniers mouvements
+ * UI moderne, responsive, et visuellement aboutie
+ */
 const Dashboard = ({ onLogout }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -35,211 +24,269 @@ const Dashboard = ({ onLogout }) => {
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
+      if (!refreshing) setLoading(true);
       setError(null);
       const dashboardData = await dashboardAPI.getSummary();
       setData(dashboardData);
     } catch (err) {
+      console.error('Erreur Dashboard:', err);
       if (err.response?.status === 401 || err.response?.status === 403) {
         if (onLogout) onLogout();
         return;
       }
-      setError(err.response?.data?.error || 'Erreur de chargement du dashboard');
+      const errorMsg = err.response?.data?.error || err.message || 'Erreur de chargement du dashboard';
+      setError(errorMsg);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchDashboardData();
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    fetchDashboardData();
+  };
+
+  // État de chargement
   if (loading && !data) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="animate-spin text-4xl text-blue-500">⏳</div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
+  // État d'erreur
   if (error && !data) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <h2 className="text-xl font-bold text-red-600 mb-2">⚠️ Erreur</h2>
-        <p className="text-gray-700 mb-4">{error}</p>
-        <button onClick={fetchDashboardData} className="bg-blue-600 text-white px-4 py-2 rounded shadow">
-          Réessayer
-        </button>
-      </div>
-    );
+    return <ErrorState error={error} onRetry={handleRetry} />;
   }
 
   const summary = data?.summary || {};
+  const critical = data?.critical_products || [];
   const recent = data?.recent_movements || [];
-  
-  // Transform movements_7days for Bar Chart
-  const mov = data?.movements_7days || [];
-  const daysMap = {};
-  // Initialize last 7 days
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    daysMap[d.toISOString().split('T')[0]] = { entree: 0, sortie: 0 };
-  }
-  mov.forEach(m => {
-    const dateStr = m.date.substring(0, 10);
-    if (daysMap[dateStr]) {
-      if (m.type === 'ENTREE') daysMap[dateStr].entree += parseInt(m.total_quantity);
-      if (m.type === 'SORTIE') daysMap[dateStr].sortie += parseInt(m.total_quantity);
-    }
-  });
-
-  const labels = Object.keys(daysMap).map(d => {
-    const date = new Date(d);
-    return date.toLocaleDateString('en-US', { weekday: 'short' });
-  });
-
-  const barChartData = {
-    labels,
-    datasets: [
-      {
-        label: 'Entrées',
-        data: Object.values(daysMap).map(d => d.entree),
-        backgroundColor: '#3b82f6', // blue-500
-        borderRadius: 4,
-      },
-      {
-        label: 'Sorties',
-        data: Object.values(daysMap).map(d => d.sortie),
-        backgroundColor: '#bfdbfe', // blue-200
-        borderRadius: 4,
-      }
-    ],
-  };
-
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { border: { display: false }, grid: { color: '#f3f4f6' } }
-    }
-  };
-
-  // Top Consumption for Horizontal Bar
-  const topCons = data?.top_consumption || [];
-  const hBarData = {
-    labels: topCons.length ? topCons.map(t => t.name.substring(0, 15)) : ['Item A', 'Item B', 'Item C'],
-    datasets: [
-      {
-        label: 'Consommation',
-        data: topCons.length ? topCons.map(t => parseInt(t.total_qty)) : [30, 20, 10],
-        backgroundColor: '#3b82f6',
-        borderRadius: 4,
-        barThickness: 16,
-      }
-    ]
-  };
-
-  const hBarOptions = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { display: false },
-      y: { grid: { display: false }, border: { display: false } }
-    }
-  };
+  const movements7days = data?.movements_7days || {};
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header Area */}
-      <div className="flex justify-between items-center bg-white px-6 py-4 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <button className="flex items-center text-sm text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50">
-            <span className="mr-2">📥</span> Export CSV
-          </button>
-          <button className="flex items-center text-sm text-white bg-gray-900 px-4 py-1.5 rounded-lg hover:bg-black shadow">
-            <span className="mr-2">➕</span> Créer Commande
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 pb-8">
+      {/* Header */}
+      <HeaderDashboard onRefresh={handleRefresh} refreshing={refreshing} />
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPI Cards Row - 5 colonnes sur desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard
-          title="Stock Total (Valeur approx.)"
-          value={`$${(summary.stock_total * 3.5).toLocaleString()}`}
-          icon="💲"
-          trendLabel="12%"
-          trendUp={true}
-        />
-        <KPICard
-          title="Mouvements (7 jours)"
-          value={mov.reduce((acc, m) => acc + parseInt(m.total_quantity), 0)}
+          title="Produits Total"
+          value={summary.total_produits || 0}
           icon="📦"
-          trendLabel="24%"
-          trendUp={false}
+          color="blue"
         />
         <KPICard
-          title="Total Commandes"
-          value={summary.stock_total || 0}
-          icon="🛒"
-          trendLabel="12%"
-          trendUp={true}
+          title="En Alerte"
+          value={summary.produits_en_alerte || 0}
+          icon="⚠️"
+          color={summary.produits_en_alerte > 0 ? 'red' : 'green'}
         />
         <KPICard
-          title="Délai Moyen Livraison"
-          value="4.5 Jours"
-          icon="⏱️"
-          trendLabel="16%"
-          trendUp={true}
+          title="Entrées (7j)"
+          value={movements7days.entries?.quantity || 0}
+          icon="📥"
+          color="green"
+        />
+        <KPICard
+          title="Sorties (7j)"
+          value={movements7days.exits?.quantity || 0}
+          icon="📤"
+          color="orange"
+        />
+        <KPICard
+          title="Pertes (7j)"
+          value={movements7days.losses?.quantity || 0}
+          icon="🗑️"
+          color="red"
         />
       </div>
 
-      {/* Charts Row */}
+      {/* Charts & Stats Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-gray-900 text-lg">Mouvements de Vente</h3>
-            <select className="text-sm border-gray-200 rounded-lg text-gray-500 bg-gray-50 px-2 py-1">
-              <option>Hebdomadaire</option>
-            </select>
-          </div>
-          <div className="flex-1 min-h-[250px]">
-            <Bar data={barChartData} options={barOptions} />
-          </div>
+        <div className="lg:col-span-2">
+          <MovementStats data={data?.movements_by_day || []} />
         </div>
-
-        <div className="lg:col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-gray-900 text-lg">Produits les plus vendus</h3>
-            <span className="text-gray-400 cursor-pointer">⋮</span>
-          </div>
-          <div className="flex-1 min-h-[250px]">
-             <Bar data={hBarData} options={hBarOptions} />
-          </div>
+        <div>
+          <StatisticsCard movements7days={movements7days} />
         </div>
       </div>
 
-      {/* Table Row */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-gray-900 text-lg">Liste des Expéditions (Récents)</h3>
-          <div className="flex items-center space-x-3 text-sm">
-            <div className="flex items-center text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-              <span className="mr-2">🔍</span> Search
-            </div>
-            <button className="text-gray-500 hover:text-gray-700 font-medium">
-              Filtrer ▽
-            </button>
-          </div>
+      {/* Critical Products Section */}
+      {critical && critical.length > 0 && (
+        <div>
+          <CriticalProducts products={critical} />
         </div>
-        <div className="overflow-x-auto">
-          <RecentMovements movements={recent} isEmbedded={true} />
+      )}
+
+      {/* Recent Movements Section */}
+      {recent && recent.length > 0 && (
+        <div>
+          <RecentMovements movements={recent} />
+        </div>
+      )}
+
+      {/* Empty State - No Data */}
+      {(!critical || critical.length === 0) && (!recent || recent.length === 0) && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center">
+          <div className="text-7xl mb-4">📊</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucune donnée disponible</h3>
+          <p className="text-gray-600 mb-6">Commencez par ajouter des produits et des mouvements de stock</p>
+          <button
+            onClick={handleRetry}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Actualiser les données
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// Composants utilitaires
+// ============================================
+
+const HeaderDashboard = ({ onRefresh, refreshing }) => {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900">📊 Dashboard</h1>
+          <p className="text-sm text-gray-600 mt-2">Gestion de stocks - TTDJAPP</p>
+        </div>
+        <button
+          onClick={onRefresh}
+          disabled={refreshing}
+          className="flex items-center space-x-2 px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+        >
+          <span className={`text-lg ${refreshing ? 'animate-spin' : ''}`}>🔄</span>
+          <span>{refreshing ? 'Actualisation...' : 'Actualiser'}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const StatisticsCard = ({ movements7days }) => {
+  const entries = movements7days.entries || {};
+  const exits = movements7days.exits || {};
+  const losses = movements7days.losses || {};
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
+      <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+        <span className="text-2xl mr-2">📈</span>
+        Résumé - 7 Jours
+      </h3>
+      <div className="space-y-4">
+        <StatRow
+          label="Entrées"
+          count={entries.count || 0}
+          quantity={entries.quantity || 0}
+          icon="📥"
+          bgColor="bg-green-50"
+          textColor="text-green-700"
+          borderColor="border-green-200"
+        />
+        <StatRow
+          label="Sorties"
+          count={exits.count || 0}
+          quantity={exits.quantity || 0}
+          icon="📤"
+          bgColor="bg-blue-50"
+          textColor="text-blue-700"
+          borderColor="border-blue-200"
+        />
+        <StatRow
+          label="Pertes"
+          count={losses.count || 0}
+          quantity={losses.quantity || 0}
+          icon="🗑️"
+          bgColor="bg-red-50"
+          textColor="text-red-700"
+          borderColor="border-red-200"
+        />
+      </div>
+    </div>
+  );
+};
+
+const StatRow = ({ label, count, quantity, icon, bgColor, textColor, borderColor }) => {
+  return (
+    <div className={`${bgColor} border ${borderColor} rounded-lg p-4 hover:shadow-md transition-shadow`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-700 flex items-center">
+          <span className="text-lg mr-2">{icon}</span>
+          {label}
+        </span>
+      </div>
+      <div className="flex justify-between items-baseline gap-4">
+        <div>
+          <p className={`text-2xl font-bold ${textColor}`}>{count}</p>
+          <p className="text-xs text-gray-600 mt-1">mouvements</p>
+        </div>
+        <div className="text-right">
+          <p className={`text-xl font-bold ${textColor}`}>{quantity}</p>
+          <p className="text-xs text-gray-600 mt-1">articles</p>
         </div>
       </div>
     </div>
   );
 };
 
+const LoadingState = () => {
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Header skeleton */}
+      <div className="h-24 bg-gray-200 rounded-xl animate-pulse" />
+
+      {/* KPI Cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse" />
+        ))}
+      </div>
+
+      {/* Charts skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 h-96 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-96 bg-gray-200 rounded-xl animate-pulse" />
+      </div>
+
+      {/* Bottom sections skeleton */}
+      <div className="h-96 bg-gray-200 rounded-xl animate-pulse" />
+      <div className="h-80 bg-gray-200 rounded-xl animate-pulse" />
+    </div>
+  );
+};
+
+const ErrorState = ({ error, onRetry }) => {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-red-200 p-12">
+      <div className="flex flex-col items-center justify-center gap-6">
+        <div className="text-7xl">⚠️</div>
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Erreur de chargement</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-xs text-gray-500 mb-6">Veuillez vérifier votre connexion et réessayer.</p>
+        </div>
+        <button
+          onClick={onRetry}
+          className="mt-4 px-8 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
+        >
+          🔄 Réessayer
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default Dashboard;
+

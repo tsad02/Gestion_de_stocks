@@ -21,7 +21,7 @@ router.get("/", authorize("EMPLOYE", "RESPONSABLE"), listMovements);
 router.get("/:id", authorize("EMPLOYE", "RESPONSABLE"), getMovementById);
 router.get("/product/:product_id", authorize("EMPLOYE", "RESPONSABLE"), getMovementsByProduct);
 
-// --- POST : Réservé au RESPONSABLE ---
-router.post("/", authorize("RESPONSABLE"), addMovement);
+// --- POST : Autorisé pour EMPLOYE et RESPONSABLE ---
+router.post("/", authorize("EMPLOYE", "RESPONSABLE"), addMovement);
 
 module.exports = router;

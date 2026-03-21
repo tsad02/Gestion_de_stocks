@@ -26,7 +26,8 @@ exports.getDashboardSummary = async (req, res, next) => {
         stock_actuel,
         min_threshold,
         (min_threshold - stock_actuel) AS quantity_needed,
-        category
+        category,
+        unit
       FROM v_alerts_critical_products
       ORDER BY stock_actuel ASC
       LIMIT 10;
@@ -54,7 +55,8 @@ exports.getDashboardSummary = async (req, res, next) => {
         m.reason,
         m.created_at,
         p.name AS product_name,
-        u.username
+        p.category,
+        u.full_name AS created_by
       FROM inventory_movements m
       JOIN products p ON m.product_id = p.id
       JOIN users u ON m.user_id = u.id
@@ -65,6 +67,7 @@ exports.getDashboardSummary = async (req, res, next) => {
     // 5. Top Consommation (Produits avec plus de SORTIE)
     const topConsumptionQuery = `
       SELECT
+        p.id,
         p.name AS product_name,
         p.category,
         COALESCE(SUM(
@@ -84,14 +87,28 @@ exports.getDashboardSummary = async (req, res, next) => {
       LIMIT 5;
     `;
 
+    // 6. Mouvements par jour (7 derniers jours) pour graphique
+    const movementsByDayQuery = `
+      SELECT
+        DATE(m.created_at) AS movement_date,
+        m.type,
+        SUM(m.quantity) AS daily_quantity,
+        COUNT(*) AS count
+      FROM inventory_movements m
+      WHERE m.created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY DATE(m.created_at), m.type
+      ORDER BY movement_date DESC;
+    `;
+
     // Exécuter toutes les requêtes en parallèle
-    const [statsResult, criticalResult, movementsResult, recentResult, consumptionResult] = 
+    const [statsResult, criticalResult, movementsResult, recentResult, consumptionResult, movementsByDayResult] = 
       await Promise.all([
         pool.query(statsQuery),
         pool.query(criticalQuery),
         pool.query(movementsQuery),
         pool.query(recentQuery),
-        pool.query(topConsumptionQuery)
+        pool.query(topConsumptionQuery),
+        pool.query(movementsByDayQuery)
       ]);
 
     // Formater les résultats
@@ -100,6 +117,7 @@ exports.getDashboardSummary = async (req, res, next) => {
     const movements = movementsResult.rows;
     const recent = recentResult.rows;
     const topConsumption = consumptionResult.rows;
+    const movementsByDay = movementsByDayResult.rows;
 
     // Calculer statistiques mouvements
     const movementStats = {
@@ -126,6 +144,7 @@ exports.getDashboardSummary = async (req, res, next) => {
           product_id: p.product_id,
           name: p.product_name,
           category: p.category,
+          unit: p.unit,
           stock: parseInt(p.stock_actuel),
           threshold: parseInt(p.min_threshold),
           needed: parseInt(p.quantity_needed),
@@ -148,69 +167,84 @@ exports.getDashboardSummary = async (req, res, next) => {
           }
         },
 
-        // Top consommation
-        top_consumption: topConsumption.map(p => ({
-          name: p.product_name,
-          category: p.category,
-          consumption: parseInt(p.total_consumption),
-          entries: parseInt(p.total_entries),
-          losses: parseInt(p.total_losses)
-        })),
-
         // Derniers mouvements
         recent_movements: recent.map(m => ({
           id: m.id,
-          product_name: m.product_name,
           type: m.type,
           quantity: parseInt(m.quantity),
+          product_name: m.product_name,
+          category: m.category,
+          created_by: m.created_by,
           reason: m.reason,
-          username: m.username,
-          timestamp: m.created_at
+          created_at: m.created_at
+        })),
+
+        // Top consommation
+        top_consumption: topConsumption.map(p => ({
+          product_id: p.id,
+          name: p.product_name,
+          category: p.category,
+          total_consumption: parseInt(p.total_consumption),
+          total_entries: parseInt(p.total_entries),
+          total_losses: parseInt(p.total_losses)
+        })),
+
+        // Mouvements par jour
+        movements_by_day: movementsByDay.map(m => ({
+          date: m.movement_date,
+          type: m.type,
+          quantity: parseInt(m.daily_quantity),
+          count: parseInt(m.count)
         }))
       }
     });
-
   } catch (error) {
-    console.error('Dashboard error:', error);
-    next(error);
+    console.error('Erreur getDashboardSummary:', error);
+    res.status(500).json({
+      status: 'error',
+      error: 'Erreur lors de la récupération du dashboard',
+      details: error.message
+    });
   }
 };
 
 /**
  * GET /api/dashboard/stats
- * Alternative endpoint pour statistiques détaillées
+ * Récupère les statistiques détaillées
  */
 exports.getDashboardStats = async (req, res, next) => {
   try {
-    const { days = 30 } = req.query;
+    const days = parseInt(req.query.days) || 30;
 
     const query = `
       SELECT
-        DATE_TRUNC('day', m.created_at)::DATE AS date,
+        DATE(m.created_at) AS stat_date,
         m.type,
-        COUNT(*) AS count,
-        SUM(m.quantity) AS total_quantity
+        SUM(m.quantity) AS total_quantity,
+        COUNT(*) AS count_movements
       FROM inventory_movements m
-      WHERE m.created_at >= NOW() - INTERVAL '${parseInt(days)} days'
-      GROUP BY DATE_TRUNC('day', m.created_at), m.type
-      ORDER BY date DESC, m.type;
+      WHERE m.created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(m.created_at), m.type
+      ORDER BY stat_date DESC;
     `;
 
     const result = await pool.query(query);
 
     res.json({
       status: 'success',
-      period_days: parseInt(days),
-      data: result.rows.map(row => ({
-        date: row.date,
-        type: row.type,
-        count: parseInt(row.count),
-        quantity: parseInt(row.total_quantity)
+      data: result.rows.map(r => ({
+        date: r.stat_date,
+        type: r.type,
+        quantity: parseInt(r.total_quantity),
+        count: parseInt(r.count_movements)
       }))
     });
-
   } catch (error) {
-    console.error('Stats error:', error);
-    next(error);
+    console.error('Erreur getDashboardStats:', error);
+    res.status(500).json({
+      status: 'error',
+      error: 'Erreur lors de la récupération des statistiques',
+      details: error.message
+    });
   }
 };

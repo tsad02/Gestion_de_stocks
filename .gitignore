@@ -98,6 +98,26 @@ dist
 # Sveltekit cache directory
 .svelte-kit/
 
+# Python Virtual Environment (not used in this Node.js/React project)
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+
 # vitepress build output
 **/.vitepress/dist
 
