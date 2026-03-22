@@ -6,7 +6,7 @@ const pool = require("../db/pool");
  */
 async function addMovement(req, res, next) {
   try {
-    const { product_id, type, quantity, reason } = req.body;
+    const { product_id, type, quantity, reason, source_location_id, destination_location_id } = req.body;
     const user_id = req.user.id;  // Utilisateur authentifié
 
     // --- Validation ---
@@ -17,10 +17,32 @@ async function addMovement(req, res, next) {
     }
 
     // Vérifier que le type est valide
-    if (!['ENTREE', 'SORTIE', 'PERTE'].includes(type.toUpperCase())) {
+    const movementType = type.toUpperCase();
+    if (!['ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT'].includes(movementType)) {
       return res.status(400).json({
-        error: "Type invalide. Doit être : ENTREE, SORTIE ou PERTE"
+        error: "Type invalide. Doit être : ENTREE, SORTIE, PERTE ou TRANSFERT"
       });
+    }
+
+    // Validation spécifique PERTE
+    if (movementType === 'PERTE' && (!reason || reason.trim() === '')) {
+      return res.status(400).json({
+        error: "Un motif (reason) est obligatoire pour enregistrer une PERTE."
+      });
+    }
+
+    // Validation spécifique TRANSFERT
+    if (movementType === 'TRANSFERT') {
+      if (!source_location_id || !destination_location_id) {
+        return res.status(400).json({
+          error: "Un transfert nécessite une source_location_id et une destination_location_id."
+        });
+      }
+      if (source_location_id === destination_location_id) {
+        return res.status(400).json({
+          error: "La source et la destination d'un transfert ne peuvent pas être identiques."
+        });
+      }
     }
 
     // Vérifier que la quantité est positive
@@ -43,10 +65,10 @@ async function addMovement(req, res, next) {
 
     // --- Insertion du mouvement ---
     const result = await pool.query(`
-      INSERT INTO inventory_movements (product_id, user_id, type, quantity, reason)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, product_id, user_id, type, quantity, reason, created_at
-    `, [product_id, user_id, type.toUpperCase(), quantity, reason || null]);
+      INSERT INTO inventory_movements (product_id, user_id, type, quantity, reason, source_location_id, destination_location_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, product_id, user_id, type, quantity, reason, source_location_id, destination_location_id, created_at
+    `, [product_id, user_id, movementType, quantity, reason || null, source_location_id || null, destination_location_id || null]);
 
     const movement = result.rows[0];
     movement.product_name = productExists.rows[0].name;
@@ -71,10 +93,15 @@ async function listMovements(req, res, next) {
     let query = `
       SELECT m.id, m.product_id, p.name AS product_name, p.category,
              m.user_id, u.full_name,
-             m.type, m.quantity, m.reason, m.created_at
+             m.type, m.quantity, m.reason, 
+             m.source_location_id, ls.name as source_location_name,
+             m.destination_location_id, ld.name as destination_location_name,
+             m.created_at
       FROM inventory_movements m
       JOIN products p ON m.product_id = p.id
       JOIN users u ON m.user_id = u.id
+      LEFT JOIN locations ls ON m.source_location_id = ls.id
+      LEFT JOIN locations ld ON m.destination_location_id = ld.id
       WHERE 1=1
     `;
     const params = [];
@@ -127,10 +154,15 @@ async function getMovementById(req, res, next) {
     const result = await pool.query(`
       SELECT m.id, m.product_id, p.name AS product_name, p.category,
              m.user_id, u.full_name,
-             m.type, m.quantity, m.reason, m.created_at
+             m.type, m.quantity, m.reason,
+             m.source_location_id, ls.name as source_location_name,
+             m.destination_location_id, ld.name as destination_location_name,
+             m.created_at
       FROM inventory_movements m
       JOIN products p ON m.product_id = p.id
       JOIN users u ON m.user_id = u.id
+      LEFT JOIN locations ls ON m.source_location_id = ls.id
+      LEFT JOIN locations ld ON m.destination_location_id = ld.id
       WHERE m.id = $1
     `, [id]);
 
@@ -169,7 +201,7 @@ async function getMovementsByProduct(req, res, next) {
     // Récupérer les mouvements
     const result = await pool.query(`
       SELECT m.id, m.product_id, m.user_id, u.full_name, m.type, m.quantity, 
-             m.reason, m.created_at
+             m.reason, m.source_location_id, m.destination_location_id, m.created_at
       FROM inventory_movements m
       JOIN users u ON m.user_id = u.id
       WHERE m.product_id = $1

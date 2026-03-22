@@ -10,6 +10,9 @@ import MovementsPage from './pages/MovementsPage';
 import UsersPage from './pages/UsersPage';
 import ConfigPage from './pages/ConfigPage';
 import ProfilePage from './pages/ProfilePage';
+import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
+import LocationsPage from './pages/LocationsPage';
+import AuditPage from './pages/AuditPage';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
@@ -78,7 +81,10 @@ function App() {
                   <Route path="/" element={<DashboardPage onLogout={handleLogout} />} />
                   <Route path="/inventory" element={<InventoryPage />} />
                   <Route path="/movements" element={<MovementsPage />} />
+                  <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+                  <Route path="/locations" element={user?.role === 'RESPONSABLE' ? <LocationsPage /> : <Navigate to="/" replace />} />
                   <Route path="/users" element={user?.role === 'RESPONSABLE' ? <UsersPage /> : <Navigate to="/" replace />} />
+                  <Route path="/audit" element={user?.role === 'RESPONSABLE' ? <AuditPage /> : <Navigate to="/" replace />} />
                   <Route path="/config" element={<ConfigPage />} />
                   <Route path="/profile" element={<ProfilePage user={user} onUpdate={handleUpdateUser} />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

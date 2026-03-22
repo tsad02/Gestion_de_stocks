@@ -118,11 +118,11 @@ const Dashboard = ({ onLogout }) => {
       </div>
 
       {/* Critical Products Section */}
-      {critical && critical.length > 0 && (
+      {/* {critical && critical.length > 0 && (
         <div>
           <CriticalProducts products={critical} />
         </div>
-      )}
+      )} */}
 
       {/* Recent Movements Section */}
       {recent && recent.length > 0 && (

@@ -4,6 +4,7 @@ import KPICard from '../components/KPICard';
 import CriticalProducts from '../components/CriticalProducts';
 import MovementStats from '../components/MovementStats';
 import RecentMovements from '../components/RecentMovements';
+import PurchaseOrderModal from '../components/PurchaseOrderModal';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,6 +32,7 @@ const DashboardPage = ({ onLogout }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPOModalOpen, setIsPOModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -69,6 +71,16 @@ const DashboardPage = ({ onLogout }) => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {isPOModalOpen && (
+        <PurchaseOrderModal
+          initialData={{ criticalProducts: critical_products }}
+          onClose={() => setIsPOModalOpen(false)}
+          onSuccess={() => {
+            setIsPOModalOpen(false);
+            fetchData();
+          }}
+        />
+      )}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Bonjour, prêt pour le service ?</h1>
@@ -145,13 +157,16 @@ const DashboardPage = ({ onLogout }) => {
           {/* <MovementStats data={data?.movements_by_day || []} /> */}
         </div>
         <div className="space-y-8">
-          <CriticalProducts products={critical_products} />
+          <CriticalProducts products={critical_products} handleGenerateOrder={() => setIsPOModalOpen(true)} />
           {/* Business Logic Widget */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10 text-9xl">☕</div>
             <h3 className="text-lg font-bold mb-2 relative z-10">Optimisation</h3>
             <p className="text-gray-400 text-sm mb-4 relative z-10">Vous avez {summary.produits_en_alerte} produits en dessous du seuil de sécurité.</p>
-            <button className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-black rounded-xl transition-all relative z-10 shadow-lg shadow-yellow-500/20">
+            <button 
+              onClick={() => setIsPOModalOpen(true)}
+              className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-black rounded-xl transition-all relative z-10 shadow-lg shadow-yellow-500/20"
+            >
               Générer bon de commande
             </button>
           </div>

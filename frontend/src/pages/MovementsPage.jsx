@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
 import inventoryAPI from '../services/inventoryAPI';
+import locationsAPI from '../services/locationsAPI';
 import { useToast } from '../components/Toast';
 
 const MovementsPage = () => {
   const toast = useToast();
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -19,7 +20,7 @@ const MovementsPage = () => {
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ product_id: '', type: 'ENTREE', quantity: '', reason: '' });
+  const [form, setForm] = useState({ product_id: '', type: 'ENTREE', quantity: '', reason: '', source_location_id: '', destination_location_id: '' });
   const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
@@ -30,12 +31,14 @@ const MovementsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const [movData, prodData] = await Promise.all([
+      const [movData, prodData, locData] = await Promise.all([
         inventoryAPI.getMovements({ limit: 5000 }), // Get enough records for client-side pagination
-        inventoryAPI.getProducts()
+        inventoryAPI.getProducts(),
+        locationsAPI.getLocations()
       ]);
       setMovements(Array.isArray(movData.movements) ? movData.movements : []);
       setProducts(Array.isArray(prodData) ? prodData : []);
+      setLocations(Array.isArray(locData) ? locData : []);
     } catch (err) {
       console.error('Erreur chargement:', err);
       setError('Erreur lors du chargement des données.');
@@ -62,10 +65,12 @@ const MovementsPage = () => {
         product_id: parseInt(form.product_id),
         type: form.type,
         quantity: parseInt(form.quantity),
-        reason: form.reason || null
+        reason: form.reason || null,
+        source_location_id: form.source_location_id ? parseInt(form.source_location_id) : null,
+        destination_location_id: form.destination_location_id ? parseInt(form.destination_location_id) : null
       });
       toast.success('Mouvement enregistré avec succès');
-      setForm({ product_id: '', type: 'ENTREE', quantity: '', reason: '' });
+      setForm({ product_id: '', type: 'ENTREE', quantity: '', reason: '', source_location_id: '', destination_location_id: '' });
       setShowModal(false);
       fetchData(); // Refresh all data to update stock levels too
     } catch (err) {
@@ -103,7 +108,8 @@ const MovementsPage = () => {
   const typeConfig = {
     ENTREE: { label: '📥 ENTRÉE', color: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800', sign: '+' },
     SORTIE: { label: '📤 SORTIE', color: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800', sign: '-' },
-    PERTE:  { label: '🗑️ PERTE', color: 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800', sign: '-' }
+    PERTE:  { label: '🗑️ PERTE', color: 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800', sign: '-' },
+    TRANSFERT: { label: '🏢 TRANSFERT', color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800', sign: '⇆' }
   };
 
   const filtered = movements.filter(m => {
@@ -152,7 +158,7 @@ const MovementsPage = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {['', 'ENTREE', 'SORTIE', 'PERTE'].map(t => (
+          {['', 'ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT'].map(t => (
             <button
               key={t}
               onClick={() => {setTypeFilter(t); setCurrentPage(1);}}
@@ -162,7 +168,7 @@ const MovementsPage = () => {
                   : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 border hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
-              {t === '' ? 'Tous' : t === 'ENTREE' ? '📥 Entrées' : t === 'SORTIE' ? '📤 Sorties' : '🗑️ Pertes'}
+              {t === '' ? 'Tous' : t === 'ENTREE' ? '📥 Entrées' : t === 'SORTIE' ? '📤 Sorties' : t === 'PERTE' ? '🗑️ Pertes' : '🏢 Transferts'}
             </button>
           ))}
         </div>
@@ -306,7 +312,8 @@ const MovementsPage = () => {
                   {[
                     { value: 'ENTREE', label: '📥 Entrée', color: 'emerald' },
                     { value: 'SORTIE', label: '📤 Sortie', color: 'blue' },
-                    { value: 'PERTE', label: '🗑️ Perte', color: 'rose' }
+                    { value: 'PERTE', label: '🗑️ Perte', color: 'rose' },
+                    { value: 'TRANSFERT', label: '🏢 Transfert', color: 'amber' }
                   ].map(t => (
                     <button
                       key={t.value}
@@ -323,6 +330,36 @@ const MovementsPage = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Transfer Details */}
+              {form.type === 'TRANSFERT' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Zone Source *</label>
+                    <select
+                      value={form.source_location_id}
+                      onChange={(e) => setForm(f => ({ ...f, source_location_id: e.target.value }))}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
+                      required
+                    >
+                      <option value="">-- Source --</option>
+                      {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Zone Destination *</label>
+                    <select
+                      value={form.destination_location_id}
+                      onChange={(e) => setForm(f => ({ ...f, destination_location_id: e.target.value }))}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
+                      required
+                    >
+                      <option value="">-- Destination --</option>
+                      {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               {/* Quantity */}
               <div>

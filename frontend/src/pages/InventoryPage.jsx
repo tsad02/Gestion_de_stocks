@@ -16,7 +16,7 @@ const InventoryPage = () => {
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', category: '', unit: 'unité', min_threshold: 0 });
+  const [addForm, setAddForm] = useState({ name: '', category: '', unit: 'unité', min_threshold: 0, target_stock: 0 });
   const [addLoading, setAddLoading] = useState(false);
 
   const [deleteModal, setDeleteModal] = useState({ open: false, productId: null, productName: '' });
@@ -56,10 +56,11 @@ const InventoryPage = () => {
         name: addForm.name.trim(),
         category: addForm.category.trim(),
         unit: addForm.unit || 'unité',
-        min_threshold: parseInt(addForm.min_threshold) || 0
+        min_threshold: parseInt(addForm.min_threshold) || 0,
+        target_stock: parseInt(addForm.target_stock) || 0
       });
       setShowAddModal(false);
-      setAddForm({ name: '', category: '', unit: 'unité', min_threshold: 0 });
+      setAddForm({ name: '', category: '', unit: 'unité', min_threshold: 0, target_stock: 0 });
       toast.success('Produit ajouté avec succès');
       fetchProducts();
     } catch (err) {
@@ -198,6 +199,7 @@ const InventoryPage = () => {
                   <th className="px-8 py-5">Produit</th>
                   <th className="px-8 py-5">Catégorie</th>
                   <th className="px-8 py-5">Unité</th>
+                  <th className="px-8 py-5 text-right">Cible</th>
                   <th className="px-8 py-5 text-right">Seuil Min</th>
                   <th className="px-8 py-5 text-right">Stock</th>
                   <th className="px-8 py-5 text-center">Statut</th>
@@ -217,7 +219,8 @@ const InventoryPage = () => {
                         </span>
                       </td>
                       <td className="px-8 py-4 text-gray-500 dark:text-gray-400 text-sm">{p.unit}</td>
-                      <td className="px-8 py-4 text-right font-medium text-gray-400 dark:text-gray-500">{p.min_threshold}</td>
+                      <td className="px-8 py-4 text-right font-medium text-gray-400 dark:text-gray-500">{p.target_stock || 0}</td>
+                      <td className="px-8 py-4 text-right font-medium text-amber-500 dark:text-amber-400">{p.min_threshold}</td>
                       <td className="px-8 py-4 text-right">
                         <span className={`text-sm font-black ${stock <= (parseInt(p.min_threshold) || 0) ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                           {stock}
@@ -323,6 +326,16 @@ const InventoryPage = () => {
                     min="0"
                     value={addForm.min_threshold}
                     onChange={(e) => setAddForm(f => ({ ...f, min_threshold: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Stock cible</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={addForm.target_stock}
+                    onChange={(e) => setAddForm(f => ({ ...f, target_stock: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
                   />
                 </div>

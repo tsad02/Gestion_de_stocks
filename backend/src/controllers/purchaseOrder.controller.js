@@ -1,0 +1,246 @@
+const pool = require('../db/pool');
+const emailService = require('../services/email.service');
+
+/**
+ * Purchase Order Controller
+ */
+const purchaseOrderController = {
+  // List all POs
+  async list(req, res) {
+    try {
+      const result = await pool.query(`
+        SELECT po.*, u.full_name as author_name,
+               (SELECT COUNT(*) FROM purchase_order_items WHERE purchase_order_id = po.id) as items_count,
+               (SELECT COALESCE(SUM(quantity * price_estimated), 0) FROM purchase_order_items WHERE purchase_order_id = po.id) as total_estimated
+        FROM purchase_orders po
+        JOIN users u ON u.id = po.user_id
+        ORDER BY po.created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Erreur lors de la récupération des commandes' });
+    }
+  },
+
+  // Get single PO with items
+  async getById(req, res) {
+    const { id } = req.params;
+    try {
+      const poResult = await pool.query(`
+        SELECT po.*, u.full_name as author_name
+        FROM purchase_orders po
+        JOIN users u ON u.id = po.user_id
+        WHERE po.id = $1
+      `, [id]);
+
+      if (poResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Commande non trouvée' });
+      }
+
+      const itemsResult = await pool.query(`
+        SELECT poi.*, p.name as product_name, p.unit, p.category
+        FROM purchase_order_items poi
+        JOIN products p ON p.id = poi.product_id
+        WHERE poi.purchase_order_id = $1
+      `, [id]);
+
+      res.json({
+        ...poResult.rows[0],
+        items: itemsResult.rows
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Erreur lors de la récupération du détail' });
+    }
+  },
+
+  // Create PO
+  async create(req, res) {
+    const { description, items } = req.body; // items: [{product_id, quantity, price_estimated}]
+    const userId = req.user.id;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const poResult = await client.query(
+        'INSERT INTO purchase_orders (user_id, description, status) VALUES ($1, $2, $3) RETURNING *',
+        [userId, description || 'Nouveau bon de commande', 'BROUILLON']
+      );
+
+      const poId = poResult.rows[0].id;
+
+      if (items && items.length > 0) {
+        for (const item of items) {
+          // Validation de base
+          if (!item.product_id || !item.quantity) continue;
+
+          // Parsing Robuste
+          const qty = parseInt(item.quantity);
+          // Gestion des virgules pour le prix (ex: "0,03" -> 0.03)
+          const price = typeof item.price_estimated === 'string' 
+            ? parseFloat(item.price_estimated.replace(',', '.')) 
+            : parseFloat(item.price_estimated || 0);
+
+          if (isNaN(qty) || qty <= 0) continue;
+
+          await client.query(
+            'INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, price_estimated) VALUES ($1, $2, $3, $4)',
+            [poId, item.product_id, qty, isNaN(price) ? 0 : price]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      res.status(201).json(poResult.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Erreur lors de la création du BC:', err.message);
+      console.error('Stack:', err.stack);
+      res.status(500).json({ 
+        error: 'Erreur lors de la création du bon de commande',
+        details: err.message 
+      });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Auto-generate PO based on critical products
+  async autoCreate(req, res) {
+    const userId = req.user.id;
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 1. Fetch products needing restock
+      const criticalProducts = await client.query(`
+        SELECT product_id, product_name, stock_actuel, target_stock, (target_stock - stock_actuel) AS quantity_needed 
+        FROM v_alerts_critical_products 
+        WHERE (target_stock - stock_actuel) > 0
+      `);
+
+      if (criticalProducts.rows.length === 0) {
+        return res.status(400).json({ message: 'Aucun produit ne nécessite de commande pour atteindre le stock cible.' });
+      }
+
+      // 2. Create PO
+      const poResult = await client.query(
+        'INSERT INTO purchase_orders (user_id, description, status) VALUES ($1, $2, $3) RETURNING *',
+        [userId, 'Commande Automatique (Stock Cible)', 'BROUILLON']
+      );
+      const poId = poResult.rows[0].id;
+      let totalEstimated = 0;
+
+      // 3. Add items
+      for (const item of criticalProducts.rows) {
+        await client.query(
+          'INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, price_estimated) VALUES ($1, $2, $3, $4)',
+          [poId, item.product_id, item.quantity_needed, 0]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      // Send Email notification (non-blocking)
+      emailService.sendPOAutoGeneratedEmail(poId, criticalProducts.rows.length, 0).catch(console.error);
+
+      res.status(201).json({
+        message: 'Bon de commande généré automatiquement',
+        purchase_order: poResult.rows[0],
+        items_count: criticalProducts.rows.length
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Erreur autoCreate BC:', err);
+      res.status(500).json({ error: 'Erreur lors de la génération automatique' });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Update PO (status or items)
+  async update(req, res) {
+    const { id } = req.params;
+    const { status, description, items } = req.body;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Check existing status
+      const currentPo = await client.query('SELECT status FROM purchase_orders WHERE id = $1', [id]);
+      if (currentPo.rows.length === 0) {
+        return res.status(404).json({ error: 'Commande non trouvée' });
+      }
+
+      const oldStatus = currentPo.rows[0].status;
+      
+      // Role Check: Only RESPONSABLE can validate or receive
+      if ((status === 'VALIDEE' || status === 'RECUE') && req.user.role !== 'RESPONSABLE') {
+        return res.status(403).json({ error: 'Seul un responsable peut valider ou recevoir une commande' });
+      }
+
+      // Update PO main info
+      await client.query(
+        'UPDATE purchase_orders SET status = COALESCE($1, status), description = COALESCE($2, description) WHERE id = $3',
+        [status, description, id]
+      );
+
+      // If items provided and po is in DRAFT, replace items
+      if (items && oldStatus === 'BROUILLON') {
+        await client.query('DELETE FROM purchase_order_items WHERE purchase_order_id = $1', [id]);
+        for (const item of items) {
+          await client.query(
+            'INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, price_estimated) VALUES ($1, $2, $3, $4)',
+            [id, item.product_id, item.quantity, item.price_estimated || 0]
+          );
+        }
+      }
+
+      // LOGIC: If status changes to 'RECUE' and wasn't 'RECUE' before, auto-create inventory movements
+      if (status === 'RECUE' && oldStatus !== 'RECUE') {
+        const poItems = await client.query('SELECT * FROM purchase_order_items WHERE purchase_order_id = $1', [id]);
+        for (const item of poItems.rows) {
+          await client.query(
+            'INSERT INTO inventory_movements (product_id, user_id, type, quantity, reason) VALUES ($1, $2, $3, $4, $5)',
+            [item.product_id, req.user.id, 'ENTREE', item.quantity, `Réception commande #${id}`]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      res.json({ message: 'Commande mise à jour', status });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error(err);
+      res.status(500).json({ error: 'Erreur lors de la mise à jour' });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Delete PO
+  async delete(req, res) {
+    const { id } = req.params;
+    try {
+      // Only allowed to delete DRAFT orders
+      const checkStatus = await pool.query('SELECT status FROM purchase_orders WHERE id = $1', [id]);
+      if (checkStatus.rows.length === 0) return res.status(404).json({ error: 'Non trouvée' });
+      
+      if (checkStatus.rows[0].status !== 'BROUILLON' && req.user.role !== 'RESPONSABLE') {
+        return res.status(403).json({ error: 'Impossible de supprimer une commande validée' });
+      }
+
+      await pool.query('DELETE FROM purchase_orders WHERE id = $1', [id]);
+      res.json({ message: 'Commande supprimée' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+  }
+};
+
+module.exports = purchaseOrderController;

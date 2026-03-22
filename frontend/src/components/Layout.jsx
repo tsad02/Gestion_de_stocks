@@ -69,12 +69,15 @@ const Layout = ({ children, onLogout, user }) => {
             <NavItem to="/" icon="📊" label="Dashboard" end={true} />
             <NavItem to="/inventory" icon="📦" label="Inventaire" />
             <NavItem to="/movements" icon="🔄" label="Mouvements" />
+            <NavItem to="/purchase-orders" icon="📋" label="Commandes" />
           </div>
 
           {isAdmin && (
             <div>
               <p className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Administration</p>
+              <NavItem to="/locations" icon="🏢" label="Localisations" />
               <NavItem to="/users" icon="👥" label="Utilisateurs" />
+              <NavItem to="/audit" icon="🛡️" label="Traçabilité" />
             </div>
           )}
 

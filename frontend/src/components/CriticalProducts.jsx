@@ -4,7 +4,7 @@ import React from 'react';
  * Composant CriticalProducts - Liste des produits en seuil critique ou rupture
  * Design premium, responsive, avec indicateurs visuels forts.
  */
-const CriticalProducts = ({ products = [] }) => {
+const CriticalProducts = ({ products = [], handleGenerateOrder }) => {
   const getAlertStyles = (level) => {
     if (level === 'CRITICAL') {
       return {
@@ -66,6 +66,11 @@ const CriticalProducts = ({ products = [] }) => {
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${styles.badge} uppercase tracking-tight`}>
                       {p.alert_level}
                     </span>
+                    {p.days_to_rupture !== null && p.days_to_rupture !== undefined && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-gray-100 text-gray-600 border-gray-200" title="Prévision selon la consommation des 30 derniers jours">
+                        ⏱️ Rupture J-{p.days_to_rupture}
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-gray-500 font-medium">Catégorie: <span className="text-gray-700">{p.category || 'Standard'}</span></p>
                 </div>
@@ -79,8 +84,8 @@ const CriticalProducts = ({ products = [] }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Seuil Min</p>
-                  <p className="text-sm font-bold text-gray-700">{p.threshold} unités</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Cible</p>
+                  <p className="text-sm font-bold text-gray-700">{p.target_stock || p.threshold} unités</p>
                 </div>
                 <div className={`${styles.bg} rounded-xl p-3 border ${styles.border}`}>
                   <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">À commander</p>
@@ -110,7 +115,10 @@ const CriticalProducts = ({ products = [] }) => {
       </div>
 
       <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-        <button className="w-full py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2">
+        <button 
+          onClick={handleGenerateOrder}
+          className="w-full py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2"
+        >
           <span>📦</span> Passer une commande groupée
         </button>
       </div>

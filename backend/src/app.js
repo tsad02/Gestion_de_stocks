@@ -5,6 +5,10 @@ const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/products.routes");
 const inventoryRoutes = require("./routes/inventory.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const purchaseOrderRoutes = require("./routes/purchaseOrder.routes");
+const locationsRoutes = require("./routes/locations.routes");
+const auditRoutes = require("./routes/audit.routes");
+const auditLog = require("./middleware/audit.middleware");
 const errorHandler = require("./middleware/errorHandler");
 
 /**
@@ -18,11 +22,14 @@ app.use(express.json()); // Permet de lire le corps des requêtes en format JSON
 app.use(express.urlencoded({ extended: true })); // Permet de lire les formulaires URL-encoded
 
 // --- Enregistrement des Routes API ---
-app.use("/api/health", healthRoutes);              // Route de vérification d'état
-app.use("/api/auth", authRoutes);                  // Routes d'authentification (login, register)
-app.use("/api/products", productRoutes);           // Routes de gestion des produits (CRUD)
-app.use("/api/inventory-movements", inventoryRoutes); // Routes de gestion des mouvements de stock
-app.use("/api/dashboard", dashboardRoutes);        // Routes du dashboard (KPI, statistiques)
+app.use("/api/health", healthRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/products", auditLog('PRODUCT'), productRoutes);
+app.use("/api/inventory-movements", auditLog('INVENTORY'), inventoryRoutes); 
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/purchase-orders", auditLog('PURCHASE_ORDER'), purchaseOrderRoutes);
+app.use("/api/locations", auditLog('LOCATION'), locationsRoutes);
+app.use("/api/audit", auditRoutes); // Routes d'audit en lecture
 
 // --- Gestionnaire d'Erreurs Centralisé ---
 // Doit toujours être placé après les routes

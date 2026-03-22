@@ -18,18 +18,27 @@ exports.getDashboardSummary = async (req, res, next) => {
       LEFT JOIN v_product_stock ps ON p.id = ps.product_id;
     `;
 
-    // 2. Produits Critiques
+    // 2. Produits Critiques avec consommation sur 30 jours
     const criticalQuery = `
+      WITH consumption AS (
+        SELECT product_id, COALESCE(SUM(quantity), 0) AS total_out
+        FROM inventory_movements
+        WHERE type IN ('SORTIE', 'PERTE') AND created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY product_id
+      )
       SELECT 
-        product_id,
-        product_name,
-        stock_actuel,
-        min_threshold,
-        (min_threshold - stock_actuel) AS quantity_needed,
-        category,
-        unit
-      FROM v_alerts_critical_products
-      ORDER BY stock_actuel ASC
+        v.product_id,
+        v.product_name,
+        v.stock_actuel,
+        v.min_threshold,
+        v.target_stock,
+        (v.target_stock - v.stock_actuel) AS quantity_needed,
+        v.category,
+        v.unit,
+        COALESCE(c.total_out, 0) AS monthly_consumption
+      FROM v_alerts_critical_products v
+      LEFT JOIN consumption c ON v.product_id = c.product_id
+      ORDER BY v.stock_actuel ASC
       LIMIT 10;
     `;
 
@@ -139,17 +148,24 @@ exports.getDashboardSummary = async (req, res, next) => {
           stock_moyen: parseFloat(stats.stock_moyen)
         },
 
-        // Produits en alerte
-        critical_products: critical.map(p => ({
-          product_id: p.product_id,
-          name: p.product_name,
-          category: p.category,
-          unit: p.unit,
-          stock: parseInt(p.stock_actuel),
-          threshold: parseInt(p.min_threshold),
-          needed: parseInt(p.quantity_needed),
-          alert_level: parseInt(p.stock_actuel) <= parseInt(p.min_threshold) / 2 ? 'CRITICAL' : 'WARNING'
-        })),
+        // Produits en alerte avec prévision de rupture
+        critical_products: critical.map(p => {
+          const cmd = parseInt(p.monthly_consumption) / 30; // Consommation Moyenne Journalière
+          const daysToRupture = cmd > 0 ? Math.round(parseInt(p.stock_actuel) / cmd) : null;
+          
+          return {
+            product_id: p.product_id,
+            name: p.product_name,
+            category: p.category,
+            unit: p.unit,
+            stock: parseInt(p.stock_actuel),
+            threshold: parseInt(p.min_threshold),
+            target_stock: parseInt(p.target_stock),
+            needed: parseInt(p.quantity_needed) > 0 ? parseInt(p.quantity_needed) : 0,
+            alert_level: parseInt(p.stock_actuel) <= parseInt(p.min_threshold) / 2 ? 'CRITICAL' : 'WARNING',
+            days_to_rupture: daysToRupture
+          };
+        }),
 
         // Statistiques 7 jours
         movements_7days: {
