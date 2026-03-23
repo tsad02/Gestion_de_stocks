@@ -6,43 +6,48 @@ import React from 'react';
  */
 const KPICard = ({ title, value, icon = '📊', color = 'blue', trend = null, trendUp = true }) => {
   const colorMap = {
-    blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', icon: 'bg-blue-100' },
-    green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-600', icon: 'bg-green-100' },
-    red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-600', icon: 'bg-red-100' },
-    orange: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600', icon: 'bg-orange-100' },
-    purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600', icon: 'bg-purple-100' }
+    blue: 'from-blue-500 to-indigo-600 shadow-blue-200 dark:shadow-blue-900/20 text-blue-600',
+    green: 'from-emerald-500 to-teal-600 shadow-emerald-200 dark:shadow-emerald-900/20 text-emerald-600',
+    red: 'from-rose-500 to-pink-600 shadow-rose-200 dark:shadow-rose-900/20 text-rose-600',
+    orange: 'from-orange-500 to-amber-600 shadow-orange-200 dark:shadow-orange-900/20 text-orange-600',
+    purple: 'from-purple-500 to-violet-600 shadow-purple-200 dark:shadow-purple-900/20 text-purple-600',
   };
 
-  const colors = colorMap[color] || colorMap.blue;
+  const bgLight = {
+    blue: 'bg-blue-50 dark:bg-blue-950/30',
+    green: 'bg-emerald-50 dark:bg-emerald-950/30',
+    red: 'bg-rose-50 dark:bg-rose-950/30',
+    orange: 'bg-orange-50 dark:bg-orange-950/30',
+    purple: 'bg-purple-50 dark:bg-purple-950/30',
+  };
 
   return (
-    <div className={`${colors.bg} border ${colors.border} rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group`}>
-      <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all" />
-      
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
       <div className="flex justify-between items-start mb-4 relative z-10">
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] leading-tight">{title}</h3>
-        <div className={`${colors.icon} rounded-xl p-2.5 text-xl shadow-inner`}>
-          {icon}
-        </div>
-      </div>
-
-      <div className="flex items-end justify-between relative z-10">
-        <div className="flex-1">
-          <p className={`text-4xl font-black tracking-tighter ${colors.text} leading-none`}>
-            {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
+        <div>
+          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1">
+            {title}
           </p>
-          {trend && (
-            <div className="flex items-center gap-1.5 mt-3 px-2 py-1 bg-white/50 rounded-lg w-fit border border-white/80 shadow-sm">
-              <span className={`text-xs ${trendUp ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {trendUp ? '↑' : '↓'}
-              </span>
-              <p className={`text-[10px] font-black ${trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {trend}
-              </p>
-            </div>
-          )}
+          <h3 className="text-3xl font-black text-gray-900 dark:text-white tabular-nums tracking-tighter">
+            {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
+          </h3>
+        </div>
+        <div className={`p-3 rounded-xl ${bgLight[color] || bgLight.blue} ${colorMap[color].split(' ').pop()} group-hover:scale-110 transition-transform shadow-inner`}>
+          <span className="text-2xl">{icon}</span>
         </div>
       </div>
+      
+      {trend && (
+        <div className="flex items-center gap-1.5 mt-2 relative z-10">
+          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${trendUp ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+            {trendUp ? '↑' : '↓'} {trend}
+          </span>
+          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">vs dernier mois</span>
+        </div>
+      )}
+
+      {/* Subtle background decoration */}
+      <div className={`absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-br ${colorMap[color].split(' ').slice(0,2).join(' ')} opacity-[0.03] rounded-full blur-3xl group-hover:opacity-10 transition-opacity`} />
     </div>
   );
 };

@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "server": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test:db": "node src/test-db.js"
+    "test:db": "node src/test-db.js",
+    "restore:db": "node restore_db_schema.js"
   },
   "keywords": [],
   "author": "",
