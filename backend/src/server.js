@@ -1,5 +1,9 @@
 require("dotenv").config(); // Charge les variables d'environnement depuis le fichier .env
 const app = require("./app");
+const autoMigrate = require("./db/auto-migrate");
+
+// Lancement de l'auto-migration avant le serveur
+autoMigrate();
 
 // Récupère le port depuis l'environnement ou utilise 3000 par défaut
 const PORT = process.env.PORT || 3000;

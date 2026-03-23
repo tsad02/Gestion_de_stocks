@@ -59,8 +59,12 @@ function App() {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
-        <div className="text-4xl animate-bounce">☕</div>
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="relative">
+          <div className="text-6xl animate-bounce mb-4">📦</div>
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-2 bg-black/10 dark:bg-white/10 rounded-full blur-sm" />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 animate-pulse">Chargement...</p>
       </div>
     );
   }
