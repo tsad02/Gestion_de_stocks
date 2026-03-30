@@ -14,6 +14,7 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const { success, error } = useToast();
+  const isReadOnly = initialData?.status === 'RECUE' || initialData?.status === 'ANNULEE';
 
   useEffect(() => {
     fetchProducts();
@@ -102,8 +103,18 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
         {/* Header */}
         <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
           <div>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-              {initialData?.id ? 'Modifier la commande' : 'Nouveau Bon de Commande'}
+            <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center">
+              {initialData?.id ? (isReadOnly ? 'Consulter la commande' : 'Modifier la commande') : 'Nouveau Bon de Commande'}
+              {initialData?.status && (
+                <span className={`ml-3 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                  initialData.status === 'VALIDEE' ? 'bg-blue-100 text-blue-600' : 
+                  initialData.status === 'RECUE' ? 'bg-green-100 text-green-600' :
+                  initialData.status === 'ANNULEE' ? 'bg-rose-100 text-rose-600' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {initialData.status}
+                </span>
+              )}
             </h2>
             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">
               {initialData?.id ? `PO #${initialData.id}` : 'Planification de stock'}
@@ -120,10 +131,11 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
             <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Description / Note</label>
             <input
               type="text"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none dark:text-white"
+              className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none dark:text-white ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
               placeholder="Ex: Commande hebdomadaire grossiste"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={isReadOnly}
               required
             />
           </div>
@@ -132,26 +144,30 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
             <div className="flex justify-between items-end">
                 <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Articles à commander</label>
                 <div className="relative w-64">
-                    <input
-                        type="text"
-                        placeholder="Rechercher un produit..."
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 dark:text-white"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    {search && filteredProducts.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden">
-                            {filteredProducts.map(p => (
-                                <button
-                                    key={p.id}
-                                    type="button"
-                                    onClick={() => addItem(p)}
-                                    className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white border-b border-gray-50 dark:border-gray-700 last:border-0"
-                                >
-                                    {p.name} <span className="text-[10px] text-gray-400">({p.category})</span>
-                                </button>
-                            ))}
-                        </div>
+                    {!isReadOnly && (
+                        <>
+                            <input
+                                type="text"
+                                placeholder="Rechercher un produit..."
+                                className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20 dark:text-white"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                            {search && filteredProducts.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden">
+                                    {filteredProducts.map(p => (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => addItem(p)}
+                                            className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white border-b border-gray-50 dark:border-gray-700 last:border-0"
+                                        >
+                                            {p.name} <span className="text-[10px] text-gray-400">({p.category})</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -174,9 +190,10 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
                         <input
                           type="number"
                           min="1"
-                          className="w-full px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
+                          className={`w-full px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs outline-none focus:ring-2 focus:ring-blue-500/20 ${isReadOnly ? 'cursor-not-allowed' : ''}`}
                           value={item.quantity}
                           onChange={(e) => updateItem(item.product_id, 'quantity', parseInt(e.target.value) || 0)}
+                          disabled={isReadOnly}
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -184,15 +201,16 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
                             <input
                             type="number"
                             step="0.01"
-                            className="w-20 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-right text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
+                            className={`w-20 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-right text-xs outline-none focus:ring-2 focus:ring-blue-500/20 ${isReadOnly ? 'cursor-not-allowed' : ''}`}
                             value={item.price_estimated}
                             onChange={(e) => updateItem(item.product_id, 'price_estimated', parseFloat(e.target.value) || 0)}
+                            disabled={isReadOnly}
                             />
                             <span className="text-[10px] text-gray-400">$</span>
                          </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button type="button" onClick={() => removeItem(item.product_id)} className="text-gray-400 hover:text-rose-500 transition-colors">×</button>
+                        {!isReadOnly && <button type="button" onClick={() => removeItem(item.product_id)} className="text-gray-400 hover:text-rose-500 transition-colors">×</button>}
                       </td>
                     </tr>
                   ))}
@@ -225,13 +243,15 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
           >
             🖨️ Imprimer PDF
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-8 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 no-print"
-          >
-            {loading ? '⏳ Enregistrement...' : (initialData?.id ? 'Mettre à jour' : 'Créer le Bon')}
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="px-8 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 no-print"
+            >
+              {loading ? '⏳ Enregistrement...' : (initialData?.id ? 'Mettre à jour' : 'Créer le Bon')}
+            </button>
+          )}
         </div>
         
         <style dangerouslySetInnerHTML={{ __html: `

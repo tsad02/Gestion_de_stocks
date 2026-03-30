@@ -63,6 +63,25 @@ async function addMovement(req, res, next) {
       });
     }
 
+    // --- Validation spécifique SORTIE, PERTE et TRANSFERT : Vérifier le stock disponible ---
+    if (movementType === 'SORTIE' || movementType === 'PERTE' || movementType === 'TRANSFERT') {
+      const stockCheck = await pool.query(`
+        SELECT COALESCE(ps.stock_actuel, 0) AS stock_actuel 
+        FROM products p
+        LEFT JOIN v_product_stock ps ON p.id = ps.product_id
+        WHERE p.id = $1
+      `, [product_id]);
+
+      const availableStock = stockCheck.rows[0]?.stock_actuel || 0;
+
+      // ❌ Rejeter si la quantité dépasse le stock disponible
+      if (quantity > availableStock) {
+        return res.status(400).json({
+          error: `❌ Stock insuffisant. Disponible: ${availableStock}, Demandé: ${quantity}`
+        });
+      }
+    }
+
     // --- Insertion du mouvement ---
     const result = await pool.query(`
       INSERT INTO inventory_movements (product_id, user_id, type, quantity, reason, source_location_id, destination_location_id)

@@ -189,8 +189,9 @@ const purchaseOrderController = {
         [status, description, id]
       );
 
-      // If items provided and po is in DRAFT, replace items
-      if (items && oldStatus === 'BROUILLON') {
+      // If items provided and po is in DRAFT or VALIDATED, allow replacing items
+      // (Manipulate "passed" orders)
+      if (items && (oldStatus === 'BROUILLON' || oldStatus === 'VALIDEE')) {
         await client.query('DELETE FROM purchase_order_items WHERE purchase_order_id = $1', [id]);
         for (const item of items) {
           await client.query(
