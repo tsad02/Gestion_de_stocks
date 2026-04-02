@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import inventoryAPI from '../services/inventoryAPI';
+import locationsAPI from '../services/locationsAPI';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import DataTable from '../components/ui/DataTable';
@@ -8,31 +9,51 @@ import { TableSkeleton } from '../components/ui/Skeleton';
 
 const InventoryPage = () => {
   const toast = useToast();
-  const [products, setProducts] = useState([]);
+  
+  // -- États de Données --
+  const [products, setProducts] = useState([]);  // Liste complète des produits avec stock calculé
+  const [locations, setLocations] = useState([]); // Liste des zones chargées pour le menu déroulant
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Modals
+  // -- Gestion des Modaux --
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', category: '', unit: 'unité', min_threshold: 0, target_stock: 0 });
+  // Initialisation du formulaire avec location_id vide par défaut
+  const [addForm, setAddForm] = useState({ 
+    name: '', 
+    category: '', 
+    unit: 'unité', 
+    min_threshold: 0, 
+    target_stock: 0, 
+    location_id: '' 
+  });
   const [addLoading, setAddLoading] = useState(false);
 
   const [deleteModal, setDeleteModal] = useState({ open: false, productId: null, productName: '' });
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // -- Contrôle d'Accès --
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = user.role === 'RESPONSABLE';
+  const isAdmin = user.role === 'RESPONSABLE'; // Détermine si l'utilisateur peut supprimer ou ajouter des produits
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  /**
+   * Récupère les produits et les localisations en parallèle.
+   * La vue v_product_stock est utilisée côté serveur pour le stock actuel.
+   */
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await inventoryAPI.getProducts();
-      setProducts(Array.isArray(data) ? data : []);
+      const [prodData, locData] = await Promise.all([
+        inventoryAPI.getProducts(),
+        locationsAPI.getLocations()
+      ]);
+      setProducts(Array.isArray(prodData) ? prodData : []);
+      setLocations(Array.isArray(locData) ? locData : []);
     } catch (err) {
       console.error('Erreur chargement produits:', err);
       setError('Erreur lors du chargement des produits.');
@@ -50,15 +71,17 @@ const InventoryPage = () => {
     }
     try {
       setAddLoading(true);
+      // location_id permet de définir la zone par défaut du produit
       await inventoryAPI.addProduct({
         name: addForm.name.trim(),
         category: addForm.category.trim(),
         unit: addForm.unit || 'unité',
         min_threshold: parseInt(addForm.min_threshold) || 0,
-        target_stock: parseInt(addForm.target_stock) || 0
+        target_stock: parseInt(addForm.target_stock) || 0,
+        location_id: addForm.location_id ? parseInt(addForm.location_id) : null
       });
       setShowAddModal(false);
-      setAddForm({ name: '', category: '', unit: 'unité', min_threshold: 0, target_stock: 0 });
+      setAddForm({ name: '', category: '', unit: 'unité', min_threshold: 0, target_stock: 0, location_id: '' });
       toast.success('Produit ajouté avec succès');
       fetchProducts();
     } catch (err) {
@@ -94,7 +117,13 @@ const InventoryPage = () => {
       key: 'category', 
       label: 'Catégorie', 
       sortable: true,
-      render: (val) => <Badge variant="neutral">{val}</Badge>
+      render: (val) => <Badge variant="neutral" className="uppercase">{val}</Badge>
+    },
+    { 
+      key: 'location_name', 
+      label: 'Zone', 
+      sortable: true,
+      render: (val) => val ? <Badge variant="blue" className="bg-blue-50 text-blue-600 border-blue-100">{val}</Badge> : <span className="text-gray-300 text-[10px] uppercase font-bold italic">Non défini</span>
     },
     { key: 'unit', label: 'Unité', sortable: true },
     { 
@@ -196,7 +225,7 @@ const InventoryPage = () => {
         <DataTable 
           columns={columns} 
           data={products} 
-          searchPlaceholder="Rechercher un produit, une catégorie ou une unité..."
+          searchPlaceholder="Rechercher un produit, une catégorie, une unité ou une zone..."
         />
       )}
 
@@ -279,6 +308,20 @@ const InventoryPage = () => {
                     onChange={(e) => setAddForm(f => ({ ...f, target_stock: e.target.value }))}
                     className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner"
                   />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Zone de stockage (Emplacement)</label>
+                  <select
+                    value={addForm.location_id}
+                    onChange={(e) => setAddForm(f => ({ ...f, location_id: e.target.value }))}
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner cursor-pointer"
+                  >
+                    <option value="">-- Aucune zone principale --</option>
+                    {locations.map(loc => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

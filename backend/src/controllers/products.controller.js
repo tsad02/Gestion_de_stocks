@@ -1,17 +1,25 @@
 const pool = require("../db/pool");
 
 /**
+ * Contrôleur pour la gestion du catalogue de produits.
+ * Gère le CRUD des produits et l'association aux zones de stockage.
+ */
+
+/**
  * Récupère la liste de tous les produits AVEC le stock actuel calculé
  * Utilise la vue v_product_stock pour obtenir le stock réel
  */
 async function getProducts(req, res, next) {
   try {
+    // On récupère les colonnes de base + le stock calculé via la vue v_product_stock
+    // + le nom de la zone (location_name) via une jointure sur locations
     const result = await pool.query(`
       SELECT 
-        p.id, p.name, p.category, p.unit, p.min_threshold, p.target_stock, p.created_at,
+        p.id, p.name, p.category, p.unit, p.min_threshold, p.target_stock, p.location_id, l.name AS location_name, p.created_at,
         COALESCE(ps.stock_actuel, 0) AS stock_actuel
       FROM products p
       LEFT JOIN v_product_stock ps ON p.id = ps.product_id
+      LEFT JOIN locations l ON p.location_id = l.id
       ORDER BY p.name ASC
     `);
     res.json(result.rows);
@@ -28,10 +36,11 @@ async function getProductById(req, res, next) {
     const { id } = req.params;
     const result = await pool.query(`
       SELECT 
-        p.id, p.name, p.category, p.unit, p.min_threshold, p.target_stock, p.created_at,
+        p.id, p.name, p.category, p.unit, p.min_threshold, p.target_stock, p.location_id, l.name AS location_name, p.created_at,
         COALESCE(ps.stock_actuel, 0) AS stock_actuel
       FROM products p
       LEFT JOIN v_product_stock ps ON p.id = ps.product_id
+      LEFT JOIN locations l ON p.location_id = l.id
       WHERE p.id = $1
     `, [id]);
 
@@ -51,7 +60,8 @@ async function getProductById(req, res, next) {
  */
 async function addProduct(req, res, next) {
   try {
-    const { name, category, unit, min_threshold, target_stock } = req.body;
+    // location_id est optionnel (permet d'assigner une zone par défaut au produit)
+    const { name, category, unit, min_threshold, target_stock, location_id } = req.body;
 
     // --- Validation ---
     if (!name || name.trim() === "") {
@@ -70,11 +80,12 @@ async function addProduct(req, res, next) {
       return res.status(400).json({ error: "Le stock cible (target_stock) ne peut pas être négatif" });
     }
 
+    // Insertion incluant location_id pour le suivi par zone
     const result = await pool.query(`
-      INSERT INTO products (name, category, unit, min_threshold, target_stock)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, name, category, unit, min_threshold, target_stock, created_at
-    `, [name.trim(), category.trim(), unit || 'unité', min_threshold || 0, target_stock || 0]);
+      INSERT INTO products (name, category, unit, min_threshold, target_stock, location_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, name, category, unit, min_threshold, target_stock, location_id, created_at
+    `, [name.trim(), category.trim(), unit || 'unité', min_threshold || 0, target_stock || 0, location_id || null]);
 
     // Return product with stock_actuel = 0 (new product)
     const product = result.rows[0];
@@ -92,7 +103,7 @@ async function addProduct(req, res, next) {
 async function updateProduct(req, res, next) {
   try {
     const { id } = req.params;
-    const { name, category, unit, min_threshold, target_stock } = req.body;
+    const { name, category, unit, min_threshold, target_stock, location_id } = req.body;
 
     // --- Validation ---
     if (name !== undefined && name.trim() === "") {
@@ -107,16 +118,18 @@ async function updateProduct(req, res, next) {
       return res.status(400).json({ error: "Le stock cible (target_stock) ne peut pas être négatif" });
     }
 
+    // Mise à jour de la zone (location_id) supportée
     const result = await pool.query(`
       UPDATE products
       SET name = COALESCE($1, name),
           category = COALESCE($2, category),
           unit = COALESCE($3, unit),
           min_threshold = COALESCE($4, min_threshold),
-          target_stock = COALESCE($5, target_stock)
-      WHERE id = $6
-      RETURNING id, name, category, unit, min_threshold, target_stock, created_at
-    `, [name, category, unit, min_threshold, target_stock, id]);
+          target_stock = COALESCE($5, target_stock),
+          location_id = COALESCE($6, location_id)
+      WHERE id = $7
+      RETURNING id, name, category, unit, min_threshold, target_stock, location_id, created_at
+    `, [name, category, unit, min_threshold, target_stock, location_id, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Produit non trouvé" });

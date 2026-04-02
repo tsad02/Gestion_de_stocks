@@ -1,37 +1,53 @@
 const pool = require("../db/pool");
 
 /**
+ * Contrôleur pour la gestion des mouvements d'inventaire.
+ * Gère les entrées, sorties, pertes, transferts et ajustements.
+ */
+
+/**
  * POST /api/inventory-movements
  * Enregistrer un nouveau mouvement de stock
  */
 async function addMovement(req, res, next) {
   try {
-    const { product_id, type, quantity, reason, source_location_id, destination_location_id } = req.body;
+    const { product_id, type, quantity, reason, source_location_id, destination_location_id, loss_reason, loss_comment } = req.body;
     const user_id = req.user.id;  // Utilisateur authentifié
 
-    // --- Validation ---
+    // --- Validation de base ---
+    // Les champs product_id, type et quantity sont requis pour tout mouvement
     if (!product_id || !type || !quantity) {
       return res.status(400).json({
         error: "product_id, type et quantity sont obligatoires"
       });
     }
 
-    // Vérifier que le type est valide
+    // Vérifier que le type de mouvement est autorisé
+    // 'AJUSTEMENT' a été ajouté pour les corrections manuelles d'inventaire
     const movementType = type.toUpperCase();
-    if (!['ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT'].includes(movementType)) {
+    if (!['ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT', 'AJUSTEMENT'].includes(movementType)) {
       return res.status(400).json({
-        error: "Type invalide. Doit être : ENTREE, SORTIE, PERTE ou TRANSFERT"
+        error: "Type invalide. Doit être : ENTREE, SORTIE, PERTE, TRANSFERT ou AJUSTEMENT"
       });
     }
 
-    // Validation spécifique PERTE
-    if (movementType === 'PERTE' && (!reason || reason.trim() === '')) {
+    // Validation spécifique PERTE : Exige une cause explicite (ex: cassé, expiré)
+    // Cela permet une analyse fine des pertes dans les rapports
+    if (movementType === 'PERTE' && (!loss_reason || loss_reason.trim() === '')) {
       return res.status(400).json({
-        error: "Un motif (reason) est obligatoire pour enregistrer une PERTE."
+        error: "Un motif de perte (loss_reason) est obligatoire pour enregistrer une PERTE."
       });
     }
 
-    // Validation spécifique TRANSFERT
+    // Validation spécifique AJUSTEMENT : Exige une raison de correction
+    // Utilisé pour documenter pourquoi le stock physique différait du stock logique
+    if (movementType === 'AJUSTEMENT' && (!reason || reason.trim() === '')) {
+      return res.status(400).json({
+        error: "Une raison (reason) est obligatoire pour enregistrer un AJUSTEMENT."
+      });
+    }
+
+    // Validation spécifique TRANSFERT : Nécessite deux zones distinctes
     if (movementType === 'TRANSFERT') {
       if (!source_location_id || !destination_location_id) {
         return res.status(400).json({
@@ -63,8 +79,11 @@ async function addMovement(req, res, next) {
       });
     }
 
-    // --- Validation spécifique SORTIE, PERTE et TRANSFERT : Vérifier le stock disponible ---
-    if (movementType === 'SORTIE' || movementType === 'PERTE' || movementType === 'TRANSFERT') {
+    // --- Vérification du stock disponible ---
+    // Obligatoire pour tout mouvement réduisant le stock physique ou logique
+    // Note: AJUSTEMENT est ici considéré comme une sortie potentielle de stock si on réduit la valeur,
+    // mais dans cette version simplifiée, on vérifie la disponibilité pour tout ajustement/perte/sortie.
+    if (movementType === 'SORTIE' || movementType === 'PERTE' || movementType === 'TRANSFERT' || movementType === 'AJUSTEMENT') {
       const stockCheck = await pool.query(`
         SELECT COALESCE(ps.stock_actuel, 0) AS stock_actuel 
         FROM products p
@@ -74,7 +93,7 @@ async function addMovement(req, res, next) {
 
       const availableStock = stockCheck.rows[0]?.stock_actuel || 0;
 
-      // ❌ Rejeter si la quantité dépasse le stock disponible
+      // ❌ Rejeter si la quantité dépasse le stock disponible (pas de stock négatif)
       if (quantity > availableStock) {
         return res.status(400).json({
           error: `❌ Stock insuffisant. Disponible: ${availableStock}, Demandé: ${quantity}`
@@ -82,12 +101,13 @@ async function addMovement(req, res, next) {
       }
     }
 
-    // --- Insertion du mouvement ---
+    // --- Insertion du mouvement en base de données ---
+    // On inclut les nouveaux champs loss_reason et loss_comment
     const result = await pool.query(`
-      INSERT INTO inventory_movements (product_id, user_id, type, quantity, reason, source_location_id, destination_location_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, product_id, user_id, type, quantity, reason, source_location_id, destination_location_id, created_at
-    `, [product_id, user_id, movementType, quantity, reason || null, source_location_id || null, destination_location_id || null]);
+      INSERT INTO inventory_movements (product_id, user_id, type, quantity, reason, source_location_id, destination_location_id, loss_reason, loss_comment)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id, product_id, user_id, type, quantity, reason, source_location_id, destination_location_id, loss_reason, loss_comment, created_at
+    `, [product_id, user_id, movementType, quantity, reason || null, source_location_id || null, destination_location_id || null, loss_reason || null, loss_comment || null]);
 
     const movement = result.rows[0];
     movement.product_name = productExists.rows[0].name;

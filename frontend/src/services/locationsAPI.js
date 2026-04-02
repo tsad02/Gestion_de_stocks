@@ -23,6 +23,10 @@ const locationsAPI = {
   deleteLocation: async (id) => {
     const res = await axios.delete(`${API_URL}/locations/${id}`, { headers: getAuthHeaders() });
     return res.data;
+  },
+  assignProducts: async (id, productIds) => {
+    const res = await axios.post(`${API_URL}/locations/${id}/products`, { productIds }, { headers: getAuthHeaders() });
+    return res.data;
   }
 };
 

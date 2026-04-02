@@ -13,7 +13,7 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const { success, error } = useToast();
+  const { success, error, info } = useToast();
   const isReadOnly = initialData?.status === 'RECUE' || initialData?.status === 'ANNULEE';
 
   useEffect(() => {
@@ -36,13 +36,13 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
       setAllProducts(Array.isArray(prods) ? prods : []);
     } catch (err) {
       console.error(err);
-      showToast('Erreur lors du chargement des produits', 'error');
+      error('Erreur lors du chargement des produits');
     }
   };
 
   const addItem = (product) => {
     if (items.find(i => i.product_id === product.id)) {
-        showToast('Produit déjà ajouté', 'info');
+        info('Produit déjà ajouté');
         return;
     }
     setItems([...items, {
@@ -257,17 +257,13 @@ const PurchaseOrderModal = ({ initialData, onClose, onSuccess }) => {
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             .no-print { display: none !important; }
-            .bg-black\\/60 { background: white !important; backdrop-filter: none !important; position: relative !important; }
-            .fixed { position: relative !important; }
-            .max-h-\\[90vh\\] { max-height: none !important; overflow: visible !important; }
-            .max-w-2xl { max-width: 100% !important; margin: 0 !important; border: none !important; box-shadow: none !important; }
             body * { visibility: hidden; }
-            #root, .fixed, .fixed * { visibility: visible; }
-            .fixed { left: 0; top: 0; width: 100%; }
-            form { overflow: visible !important; padding: 0 !important; }
-            .p-8 { padding: 1rem !important; }
-            .divide-y > * { border-color: #eee !important; }
-            input { border: none !important; padding: 0 !important; background: transparent !important; }
+            .fixed, .fixed * { visibility: visible; }
+            .fixed { position: absolute !important; left: 0; top: 0; width: 100%; height: auto !important; background: white !important; backdrop-filter: none !important; }
+            .max-h-\\[90vh\\] { max-height: none !important; overflow: visible !important; box-shadow: none !important; border: none !important; }
+            form { overflow: visible !important; height: auto !important; }
+            * { color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            input { border: none !important; background: transparent !important; color: black !important; }
           }
         `}} />
       </div>

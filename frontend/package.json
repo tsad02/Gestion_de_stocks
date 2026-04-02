@@ -1,6 +1,6 @@
 {
   "name": "gestion-stocks-frontend",
-  "version": "1.0.0",
+  "version": "3.1.0",
   "description": "Frontend React + Tailwind pour Gestion de Stocks",
   "private": true,
   "type": "module",

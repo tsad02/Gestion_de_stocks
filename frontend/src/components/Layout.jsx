@@ -1,6 +1,9 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
+/**
+ * Composant pour un élément de navigation dans la barre latérale.
+ */
 const NavItem = ({ to, icon, label, end = false }) => (
   <NavLink
     to={to}
@@ -18,11 +21,16 @@ const NavItem = ({ to, icon, label, end = false }) => (
   </NavLink>
 );
 
+/**
+ * Mise en page (Layout) globale de l'application.
+ * Gère la barre latérale, l'en-tête, le thème sombre et l'affichage du contenu.
+ */
 const Layout = ({ children, onLogout, user }) => {
   const isAdmin = user?.role === 'RESPONSABLE';
   const navigate = useNavigate();
   
-  // Dark mode state
+  // -- Gestion du Thème (Dark Mode) --
+  // Initialisation à partir du localStorage ou des préférences système
   const [isDark, setIsDark] = React.useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -70,6 +78,9 @@ const Layout = ({ children, onLogout, user }) => {
             <NavItem to="/inventory" icon="📦" label="Inventaire" />
             <NavItem to="/movements" icon="🔄" label="Mouvements" />
             <NavItem to="/purchase-orders" icon="📋" label="Commandes" />
+            {/* Nouveaux menus pour le module restaurant */}
+            <NavItem to="/reports" icon="📈" label="Rapports" />
+            <NavItem to="/suggestions" icon="💡" label="Suggestions" />
           </div>
 
           {isAdmin && (

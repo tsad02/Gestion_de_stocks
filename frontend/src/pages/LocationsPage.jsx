@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import locationsAPI from '../services/locationsAPI';
 import { useToast } from '../components/Toast';
+import ZoneProductsModal from '../components/ZoneProductsModal';
 
 export default function LocationsPage() {
   const [locations, setLocations] = useState([]);
@@ -8,7 +9,8 @@ export default function LocationsPage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [editingId, setEditingId] = useState(null);
-  const { showToast } = useToast();
+  const [zoneProductsModal, setZoneProductsModal] = useState({ open: false, location: null });
+  const { success, error } = useToast();
 
   useEffect(() => {
     fetchLocations();
@@ -20,7 +22,7 @@ export default function LocationsPage() {
       const data = await locationsAPI.getLocations();
       setLocations(data);
     } catch (err) {
-      showToast('Erreur lors du chargement des localisations', 'error');
+      error('Erreur lors du chargement des localisations');
     } finally {
       setLoading(false);
     }
@@ -42,10 +44,10 @@ export default function LocationsPage() {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette localisation ?")) return;
     try {
       await locationsAPI.deleteLocation(id);
-      showToast('Localisation supprimée', 'success');
+      success('Localisation supprimée');
       fetchLocations();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Erreur lors de la suppression', 'error');
+      error(err.response?.data?.error || 'Erreur lors de la suppression');
     }
   };
 
@@ -54,15 +56,15 @@ export default function LocationsPage() {
     try {
       if (editingId) {
         await locationsAPI.updateLocation(editingId, formData);
-        showToast('Localisation modifiée', 'success');
+        success('Localisation modifiée');
       } else {
         await locationsAPI.createLocation(formData);
-        showToast('Localisation créée', 'success');
+        success('Localisation créée');
       }
       setShowModal(false);
       fetchLocations();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Une erreur est survenue', 'error');
+      error(err.response?.data?.error || 'Une erreur est survenue');
     }
   };
 
@@ -99,8 +101,9 @@ export default function LocationsPage() {
                   <td className="p-4 font-bold text-gray-900 dark:text-white">{loc.name}</td>
                   <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{loc.description || '-'}</td>
                   <td className="p-4 text-right space-x-2">
-                    <button onClick={() => handleOpenEdit(loc)} className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-lg transition-colors">✏️</button>
-                    <button onClick={() => handleDelete(loc.id)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors">🗑️</button>
+                    <button onClick={() => setZoneProductsModal({ open: true, location: loc })} className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 p-2 rounded-lg transition-colors" title="Gérer les produits">📦</button>
+                    <button onClick={() => handleOpenEdit(loc)} className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-lg transition-colors" title="Modifier">✏️</button>
+                    <button onClick={() => handleDelete(loc.id)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors" title="Supprimer">🗑️</button>
                   </td>
                 </tr>
               )) : (
@@ -156,6 +159,16 @@ export default function LocationsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {zoneProductsModal.open && zoneProductsModal.location && (
+        <ZoneProductsModal
+          location={zoneProductsModal.location}
+          onClose={() => setZoneProductsModal({ open: false, location: null })}
+          onSuccess={() => {
+            setZoneProductsModal({ open: false, location: null });
+          }}
+        />
       )}
     </div>
   );

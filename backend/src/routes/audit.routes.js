@@ -6,7 +6,7 @@ const roleMiddleware = require('../middleware/role.middleware');
 
 // Routes protégées par token et limitées aux Responsables
 router.use(verifyToken);
-router.use(roleMiddleware(['RESPONSABLE']));
+router.use(roleMiddleware('RESPONSABLE'));
 
 router.get('/', auditController.getAuditLogs);
 

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout';
 import Login from './components/Login';
 
-// Pages
+// Pages principales
 import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
 import MovementsPage from './pages/MovementsPage';
@@ -13,6 +13,10 @@ import ProfilePage from './pages/ProfilePage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import LocationsPage from './pages/LocationsPage';
 import AuditPage from './pages/AuditPage';
+
+// Nouvelles pages (Module Restaurant-grade)
+import ReportsPage from './pages/ReportsPage';
+import SuggestionsPage from './pages/SuggestionsPage';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
@@ -82,15 +86,21 @@ function App() {
             ) : (
               <Layout onLogout={handleLogout} user={user}>
                 <Routes>
+                  {/* Routes Accessibles à tous les utilisateurs authentifiés */}
                   <Route path="/" element={<DashboardPage onLogout={handleLogout} />} />
                   <Route path="/inventory" element={<InventoryPage />} />
                   <Route path="/movements" element={<MovementsPage />} />
                   <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/suggestions" element={<SuggestionsPage />} />
+                  <Route path="/config" element={<ConfigPage />} />
+                  <Route path="/profile" element={<ProfilePage user={user} onUpdate={handleUpdateUser} />} />
+                  
+                  {/* Routes Restreintes (Responsable uniquement) */}
                   <Route path="/locations" element={user?.role === 'RESPONSABLE' ? <LocationsPage /> : <Navigate to="/" replace />} />
                   <Route path="/users" element={user?.role === 'RESPONSABLE' ? <UsersPage /> : <Navigate to="/" replace />} />
                   <Route path="/audit" element={user?.role === 'RESPONSABLE' ? <AuditPage /> : <Navigate to="/" replace />} />
-                  <Route path="/config" element={<ConfigPage />} />
-                  <Route path="/profile" element={<ProfilePage user={user} onUpdate={handleUpdateUser} />} />
+
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Layout>

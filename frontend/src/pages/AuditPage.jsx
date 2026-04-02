@@ -5,7 +5,7 @@ import { useToast } from '../components/Toast';
 export default function AuditPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { showToast } = useToast();
+  const { error } = useToast();
 
   useEffect(() => {
     fetchLogs();
@@ -17,7 +17,7 @@ export default function AuditPage() {
       const data = await auditAPI.getAuditLogs();
       setLogs(data.logs || []);
     } catch (err) {
-      showToast('Erreur lors du chargement des logs d\'audit', 'error');
+      error(`Erreur lors du chargement des logs d'audit`);
     } finally {
       setLoading(false);
     }

@@ -98,9 +98,37 @@ async function deleteLocation(req, res, next) {
   }
 }
 
+/**
+ * POST /api/locations/:id/products
+ * Assigner en masse des produits à une localisation
+ */
+async function assignProductsToLocation(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { productIds } = req.body;
+
+    if (!Array.isArray(productIds)) {
+      return res.status(400).json({ error: 'productIds doit être un tableau.' });
+    }
+
+    // 1. Dé-assigner tous les produits qui étaient dans cette zone
+    await pool.query('UPDATE products SET location_id = NULL WHERE location_id = $1', [id]);
+
+    // 2. Assigner les nouveaux produits sélectionnés à cette zone (écrase leur ancienne zone)
+    if (productIds.length > 0) {
+      await pool.query('UPDATE products SET location_id = $1 WHERE id = ANY($2::int[])', [id, productIds]);
+    }
+
+    res.json({ message: 'Produits mis à jour avec succès pour cette zone.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getLocations,
   createLocation,
   updateLocation,
-  deleteLocation
+  deleteLocation,
+  assignProductsToLocation
 };

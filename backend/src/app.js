@@ -8,6 +8,8 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const purchaseOrderRoutes = require("./routes/purchaseOrder.routes");
 const locationsRoutes = require("./routes/locations.routes");
 const auditRoutes = require("./routes/audit.routes");
+const reportsRoutes = require("./routes/reports.routes");
+const suggestionsRoutes = require("./routes/suggestions.routes");
 const auditLog = require("./middleware/audit.middleware");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -25,11 +27,13 @@ app.use(express.urlencoded({ extended: true })); // Permet de lire les formulair
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", auditLog('PRODUCT'), productRoutes);
-app.use("/api/inventory-movements", auditLog('INVENTORY'), inventoryRoutes); 
+app.use("/api/inventory-movements", auditLog('INVENTORY'), inventoryRoutes); // Suivi des flux (Entrée/Sortie/Perte/...)
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/purchase-orders", auditLog('PURCHASE_ORDER'), purchaseOrderRoutes);
 app.use("/api/locations", auditLog('LOCATION'), locationsRoutes);
-app.use("/api/audit", auditRoutes); // Routes d'audit en lecture
+app.use("/api/audit", auditRoutes); // Consultation des logs d'audit
+app.use("/api/reports", reportsRoutes); // Moteur de rapports périodiques (Restaurant-grade)
+app.use("/api/suggestions", suggestionsRoutes); // Recommandations métier intelligentes (IA Simple)
 
 // --- Gestionnaire d'Erreurs Centralisé ---
 // Doit toujours être placé après les routes

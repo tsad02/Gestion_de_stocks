@@ -11,8 +11,9 @@ router.use(verifyToken);
 router.get('/', locationsController.getLocations);
 
 // Seuls les responsables peuvent modifier les localisations
-router.post('/', roleMiddleware(['RESPONSABLE']), locationsController.createLocation);
-router.put('/:id', roleMiddleware(['RESPONSABLE']), locationsController.updateLocation);
-router.delete('/:id', roleMiddleware(['RESPONSABLE']), locationsController.deleteLocation);
+router.post('/', roleMiddleware('RESPONSABLE'), locationsController.createLocation);
+router.put('/:id', roleMiddleware('RESPONSABLE'), locationsController.updateLocation);
+router.delete('/:id', roleMiddleware('RESPONSABLE'), locationsController.deleteLocation);
+router.post('/:id/products', roleMiddleware('RESPONSABLE'), locationsController.assignProductsToLocation);
 
 module.exports = router;

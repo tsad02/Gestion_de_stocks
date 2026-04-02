@@ -15,6 +15,9 @@ async function autoMigrate() {
                 IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'movement_type' AND e.enumlabel = 'TRANSFERT') THEN
                     ALTER TYPE movement_type ADD VALUE 'TRANSFERT';
                 END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'movement_type' AND e.enumlabel = 'AJUSTEMENT') THEN
+                    ALTER TYPE movement_type ADD VALUE 'AJUSTEMENT';
+                END IF;
             END $$;
         `);
 
@@ -31,12 +34,15 @@ async function autoMigrate() {
         // 3. products columns
         await pool.query(`
             ALTER TABLE products ADD COLUMN IF NOT EXISTS target_stock INTEGER DEFAULT 0;
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL;
         `);
 
         // 4. inventory_movements columns
         await pool.query(`
             ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS source_location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL;
             ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS destination_location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL;
+            ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS loss_reason VARCHAR(100);
+            ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS loss_comment TEXT;
         `);
 
         // 5. Views

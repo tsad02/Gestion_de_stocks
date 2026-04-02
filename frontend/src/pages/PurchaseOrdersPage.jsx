@@ -78,10 +78,10 @@ const PurchaseOrdersPage = () => {
   const handleDelete = async () => {
     try {
       await purchaseOrderAPI.delete(orderToDelete.id);
-      showToast('Commande supprimée', 'success');
+      success('Commande supprimée');
       fetchOrders();
     } catch (err) {
-      showToast('Erreur lors de la suppression', 'error');
+      error('Erreur lors de la suppression');
     } finally {
       setIsConfirmOpen(false);
     }

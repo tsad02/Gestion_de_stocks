@@ -8,30 +8,45 @@ import { TableSkeleton } from '../components/ui/Skeleton';
 
 const MovementsPage = () => {
   const toast = useToast();
-  const [movements, setMovements] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [locations, setLocations] = useState([]);
+  
+  // -- États de Données --
+  const [movements, setMovements] = useState([]); // Liste des derniers mouvements
+  const [products, setProducts] = useState([]);  // Catalogue pour le sélecteur
+  const [locations, setLocations] = useState([]); // Zones pour les transferts
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Filters
   const [typeFilter, setTypeFilter] = useState('');
 
-  // Modal state
+  // -- État du Formulaire --
+  // Initialisé avec les nouveaux champs de perte et d'ajustement
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ product_id: '', type: 'ENTREE', quantity: '', reason: '', source_location_id: '', destination_location_id: '' });
+  const [form, setForm] = useState({ 
+    product_id: '', 
+    type: 'ENTREE', 
+    quantity: '', 
+    reason: '', 
+    source_location_id: '', 
+    destination_location_id: '', 
+    loss_reason: '', 
+    loss_comment: '' 
+  });
   const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  /**
+   * Charge les données nécessaires (Mouvements, Produits, Zones)
+   */
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
       const [movData, prodData, locData] = await Promise.all([
-        inventoryAPI.getMovements({ limit: 5000 }), 
+        inventoryAPI.getMovements({ limit: 500 }), // Limite augmentée pour l'historique
         inventoryAPI.getProducts(),
         locationsAPI.getLocations()
       ]);
@@ -47,6 +62,10 @@ const MovementsPage = () => {
     }
   };
 
+  /**
+   * Enregistre un nouveau mouvement via l'API.
+   * Gère les validations frontend de base.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.product_id || !form.type || !form.quantity) {
@@ -60,18 +79,23 @@ const MovementsPage = () => {
 
     try {
       setFormLoading(true);
+      // On envoie un objet propre à l'API
       await inventoryAPI.addMovement({
         product_id: parseInt(form.product_id),
         type: form.type,
         quantity: parseInt(form.quantity),
         reason: form.reason || null,
         source_location_id: form.source_location_id ? parseInt(form.source_location_id) : null,
-        destination_location_id: form.destination_location_id ? parseInt(form.destination_location_id) : null
+        destination_location_id: form.destination_location_id ? parseInt(form.destination_location_id) : null,
+        loss_reason: form.loss_reason || null,
+        loss_comment: form.loss_comment || null
       });
       toast.success('Mouvement enregistré avec succès');
-      setForm({ product_id: '', type: 'ENTREE', quantity: '', reason: '', source_location_id: '', destination_location_id: '' });
+      
+      // Reset du formulaire
+      setForm({ product_id: '', type: 'ENTREE', quantity: '', reason: '', source_location_id: '', destination_location_id: '', loss_reason: '', loss_comment: '' });
       setShowModal(false);
-      fetchData(); 
+      fetchData(); // Rafraîchissement de la liste et du stock des produits
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erreur lors de la création');
     } finally {
@@ -116,10 +140,11 @@ const MovementsPage = () => {
       className: 'text-center',
       render: (val) => {
         const variants = {
-          'ENTREE': 'success',
-          'SORTIE': 'blue',
-          'PERTE': 'error',
-          'TRANSFERT': 'warning'
+          'ENTREE':      'success',
+          'SORTIE':      'blue',
+          'PERTE':       'error',
+          'TRANSFERT':   'warning',
+          'AJUSTEMENT':  'neutral'
         };
         return <Badge variant={variants[val] || 'neutral'} className="uppercase px-4">{val}</Badge>;
       }
@@ -130,8 +155,9 @@ const MovementsPage = () => {
       sortable: true, 
       className: 'text-right',
       render: (val, row) => {
-        const sign = row.type === 'ENTREE' ? '+' : (row.type === 'TRANSFERT' ? '⇆' : '-');
-        return <span className="font-black text-gray-900 dark:text-white">{sign}{val}</span>;
+        const sign = row.type === 'ENTREE' ? '+' : (row.type === 'TRANSFERT' ? '⇆' : row.type === 'AJUSTEMENT' ? 'Δ' : '-');
+        const color = row.type === 'ENTREE' ? 'text-emerald-600' : row.type === 'AJUSTEMENT' ? 'text-amber-600' : 'text-gray-900 dark:text-white';
+        return <span className={`font-black ${color}`}>{sign}{val}</span>;
       }
     },
     { 
@@ -177,8 +203,8 @@ const MovementsPage = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex bg-white/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-700 w-fit gap-1 shadow-sm">
-        {['', 'ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT'].map(t => (
+      <div className="flex bg-white/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-700 w-fit gap-1 shadow-sm flex-wrap">
+        {['', 'ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT', 'AJUSTEMENT'].map(t => (
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
@@ -239,20 +265,21 @@ const MovementsPage = () => {
                 </select>
               </div>
 
-              {/* Type */}
+              {/* Type Buttons */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Type de mouvement *</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'ENTREE', label: '📥 Entrée', color: 'emerald' },
-                    { value: 'SORTIE', label: '📤 Sortie', color: 'blue' },
-                    { value: 'PERTE', label: '🗑️ Perte', color: 'rose' },
-                    { value: 'TRANSFERT', label: '🏢 Transfert', color: 'amber' }
+                    { value: 'ENTREE',     label: '📥 Entrée',    color: 'emerald' },
+                    { value: 'SORTIE',     label: '📤 Sortie',    color: 'blue' },
+                    { value: 'PERTE',      label: '🗑️ Perte',     color: 'rose' },
+                    { value: 'TRANSFERT',  label: '🏢 Transfert', color: 'amber' },
+                    { value: 'AJUSTEMENT',label: '⚖️ Ajustement', color: 'purple' }
                   ].map(t => (
                     <button
                       key={t.value}
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, type: t.value }))}
+                      onClick={() => setForm(f => ({ ...f, type: t.value, loss_reason: '', loss_comment: '' }))}
                       className={`py-3 rounded-xl text-xs font-black border-2 transition-all ${
                         form.type === t.value
                           ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 shadow-md'
@@ -309,17 +336,67 @@ const MovementsPage = () => {
                 />
               </div>
 
-              {/* Reason */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Raison (optionnel)</label>
-                <input
-                  type="text"
-                  value={form.reason}
-                  onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))}
-                  placeholder="ex: Livraison fournisseur, Vente..."
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
-                />
-              </div>
+              {/* Loss reason - PERTE uniquement */}
+              {form.type === 'PERTE' && (
+                <div className="space-y-3 p-4 bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-900">
+                  <div>
+                    <label className="block text-sm font-bold text-rose-700 dark:text-rose-400 mb-2">Motif de perte *</label>
+                    <select
+                      value={form.loss_reason}
+                      onChange={(e) => setForm(f => ({ ...f, loss_reason: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-900/50 border border-rose-200 dark:border-rose-800 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-rose-500/30 outline-none"
+                      required
+                    >
+                      <option value="">-- Sélectionner un motif --</option>
+                      <option value="expiré">⏱️ Expiré</option>
+                      <option value="cassé">💥 Cassé</option>
+                      <option value="erreur manipulation">⚠️ Erreur de manipulation</option>
+                      <option value="erreur commande client">🚫 Erreur commande client</option>
+                      <option value="invendu">📦 Invendu</option>
+                      <option value="autre">📝 Autre</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-rose-700 dark:text-rose-400 mb-2">Commentaire (optionnel)</label>
+                    <textarea
+                      value={form.loss_comment}
+                      onChange={(e) => setForm(f => ({ ...f, loss_comment: e.target.value }))}
+                      placeholder="Détails supplémentaires..."
+                      rows={2}
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-900/50 border border-rose-200 dark:border-rose-800 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-rose-500/30 outline-none resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Raison - AJUSTEMENT uniquement */}
+              {form.type === 'AJUSTEMENT' && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900">
+                  <label className="block text-sm font-bold text-amber-700 dark:text-amber-400 mb-2">Raison de l'ajustement *</label>
+                  <input
+                    type="text"
+                    value={form.reason}
+                    onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))}
+                    placeholder="ex: Correction inventaire physique, Recalibrage..."
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-900/50 border border-amber-200 dark:border-amber-800 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
+                    required
+                  />
+                </div>
+              )}
+
+              {/* Raison générique pour ENTREE/SORTIE */}
+              {(form.type === 'ENTREE' || form.type === 'SORTIE') && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Raison (optionnel)</label>
+                  <input
+                    type="text"
+                    value={form.reason}
+                    onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))}
+                    placeholder="ex: Livraison fournisseur, Vente..."
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500/30 outline-none"
+                  />
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <button
