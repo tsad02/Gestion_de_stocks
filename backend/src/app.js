@@ -1,5 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
+const rateLimit = require("express-rate-limit");
 const healthRoutes = require("./routes/health.routes");
 const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/products.routes");
@@ -19,9 +22,29 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 
 // --- Middlewares Globaux ---
-app.use(cors()); // Autorise les requêtes cross-origin
-app.use(express.json()); // Permet de lire le corps des requêtes en format JSON
-app.use(express.urlencoded({ extended: true })); // Permet de lire les formulaires URL-encoded
+// --- Middlewares de Production & Sécurité ---
+app.use(helmet()); // Sécurise les en-têtes HTTP
+app.use(compression()); // Compresse les réponses pour la performance
+
+// Restriction CORS (Production vs Développement)
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : true, // Autorise tout en dev, ou l'URL Vercel en prod
+  credentials: true
+};
+app.use(cors(corsOptions));
+
+// Limiteur de requêtes pour protéger l'API (Anti brute-force léger)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limite à 100 requêtes par IP
+  message: { error: "Trop de requêtes, veuillez réessayer plus tard." }
+});
+app.use("/api/auth/login", limiter); 
+
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
 
 // --- Enregistrement des Routes API ---
 app.use("/api/health", healthRoutes);
@@ -32,8 +55,13 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/purchase-orders", auditLog('PURCHASE_ORDER'), purchaseOrderRoutes);
 app.use("/api/locations", auditLog('LOCATION'), locationsRoutes);
 app.use("/api/audit", auditRoutes); // Consultation des logs d'audit
-app.use("/api/reports", reportsRoutes); // Moteur de rapports périodiques (Restaurant-grade)
-app.use("/api/suggestions", suggestionsRoutes); // Recommandations métier intelligentes (IA Simple)
+app.use("/api/reports", reportsRoutes); 
+app.use("/api/suggestions", suggestionsRoutes); 
+
+// --- Handler 404 (Route non trouvée) ---
+app.use((req, res) => {
+  res.status(404).json({ error: "Route non trouvée ou API endpoint inexistant." });
+});
 
 // --- Gestionnaire d'Erreurs Centralisé ---
 // Doit toujours être placé après les routes
