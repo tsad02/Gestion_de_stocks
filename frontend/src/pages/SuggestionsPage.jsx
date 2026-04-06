@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
-  Authorization: `Bearer ${localStorage.getItem('token')}`
-});
+import API from '../services/api';
 
 /**
  * Configuration visuelle des niveaux de sévérité.
@@ -53,15 +47,13 @@ const SuggestionsPage = () => {
   }, []);
 
   /**
-   * Récupère les suggestions générées par le backend.
+   * Récupère les suggestions générées par le backend via l'instance Axios centralisée.
    */
   const fetchSuggestions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/suggestions`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error('Erreur');
-      const data = await res.json();
-      setSuggestions(data.suggestions || []);
+      const res = await API.get('/suggestions');
+      setSuggestions(res.data.suggestions || []);
     } catch (err) {
       toast.error('Impossible de charger les suggestions');
     } finally {

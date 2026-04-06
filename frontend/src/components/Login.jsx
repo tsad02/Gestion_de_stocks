@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { login } from '../services/userAPI';
 
 const Login = ({ setAuth }) => {
   const [email, setEmail] = useState('');
@@ -13,18 +13,17 @@ const Login = ({ setAuth }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const data = await login(email, password);
 
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (data.token) {
+        localStorage.setItem('user', JSON.stringify(data.user));
         setAuth(true);
       }
     } catch (err) {
       console.error('Erreur de connexion:', err);
+      // 'err' ici est déjà formaté par userAPI.js (error.response?.data || error.message)
       setError(
-        err.response?.data?.error ||
-        'Échec de la connexion. Vérifiez vos identifiants.'
+        typeof err === 'object' ? (err.error || err.message) : 'Échec de la connexion. Vérifiez vos identifiants.'
       );
     } finally {
       setLoading(false);

@@ -25,5 +25,5 @@
     "preview": "vite preview",
     "start": "vite"
   },
-  "proxy": "http://localhost:3000"
+  "proxy": "http://localhost:10000"
 }

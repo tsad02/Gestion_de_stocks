@@ -1,17 +1,4 @@
-import axios from 'axios';
-
-const API = axios.create({
-  baseURL: '/api',
-});
-
-// Ajouter le token Bearer à chaque requête
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import API from './api';
 
 /**
  * Crée un nouvel utilisateur
@@ -55,4 +42,31 @@ export const getMe = async () => {
   }
 };
 
-export default { createUser, getAllUsers, getMe };
+/**
+ * Authentifie un utilisateur (Login)
+ */
+export const login = async (email, password) => {
+  try {
+    const response = await API.post('/auth/login', { email, password });
+    if (response.data && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+/**
+ * Met à jour le profil de l'utilisateur connecté (nom, téléphone ou mot de passe)
+ */
+export const updateMe = async (userData) => {
+  try {
+    const response = await API.put('/auth/me', userData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export default { createUser, getAllUsers, getMe, login, updateMe };

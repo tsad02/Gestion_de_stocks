@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { updateMe } from '../services/userAPI';
 import { useToast } from '../components/Toast';
 
 const ProfilePage = ({ user, onUpdate }) => {
@@ -26,18 +26,14 @@ const ProfilePage = ({ user, onUpdate }) => {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.put('/api/auth/me', 
-        { full_name: form.full_name, phone: form.phone },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const data = await updateMe({ full_name: form.full_name, phone: form.phone });
       
-      const updatedUser = response.data.user;
+      const updatedUser = data.user;
       localStorage.setItem('user', JSON.stringify(updatedUser));
       onUpdate && onUpdate(updatedUser);
       toast.success('Profil mis à jour avec succès');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Erreur lors de la mise à jour');
+      toast.error(error.error || error.message || 'Erreur lors de la mise à jour');
     } finally {
       setLoading(false);
     }
@@ -52,20 +48,16 @@ const ProfilePage = ({ user, onUpdate }) => {
 
     try {
       setPwdLoading(true);
-      const token = localStorage.getItem('token');
-      await axios.put('/api/auth/me', 
-        { 
-          current_password: pwdForm.current_password,
-          new_password: pwdForm.new_password 
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await updateMe({ 
+        current_password: pwdForm.current_password,
+        new_password: pwdForm.new_password 
+      });
       
       toast.success('Mot de passe modifié avec succès');
       setPwdForm({ current_password: '', new_password: '', confirm_password: '' });
       setActiveTab('info');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Erreur lors du changement de mot de passe');
+      toast.error(error.error || error.message || 'Erreur lors du changement de mot de passe');
     } finally {
       setPwdLoading(false);
     }

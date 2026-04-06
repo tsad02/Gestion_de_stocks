@@ -1,46 +1,39 @@
-import axios from 'axios';
-
-const API_URL = '/api/purchase-orders';
-
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
+import API from './api';
 
 const purchaseOrderAPI = {
     // List all POs
     getAll: async () => {
-        const response = await axios.get(API_URL, { headers: getAuthHeader() });
+        const response = await API.get('/purchase-orders');
         return response.data;
     },
 
     // Get single PO
     getById: async (id) => {
-        const response = await axios.get(`${API_URL}/${id}`, { headers: getAuthHeader() });
+        const response = await API.get(`/purchase-orders/${id}`);
         return response.data;
     },
 
     // Create PO
     create: async (data) => {
-        const response = await axios.post(API_URL, data, { headers: getAuthHeader() });
+        const response = await API.post('/purchase-orders', data);
         return response.data;
     },
 
     // Auto-Create PO based on critical products
     autoCreate: async () => {
-        const response = await axios.post(`${API_URL}/auto`, {}, { headers: getAuthHeader() });
+        const response = await API.post('/purchase-orders/auto', {});
         return response.data;
     },
 
     // Update PO (status or items)
     update: async (id, data) => {
-        const response = await axios.put(`${API_URL}/${id}`, data, { headers: getAuthHeader() });
+        const response = await API.put(`/purchase-orders/${id}`, data);
         return response.data;
     },
 
     // Delete PO
     delete: async (id) => {
-        const response = await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeader() });
+        const response = await API.delete(`/purchase-orders/${id}`);
         return response.data;
     }
 };

@@ -23,14 +23,12 @@ const app = express();
 
 // --- Middlewares Globaux ---
 // --- Middlewares de Production & Sécurité ---
-app.use(helmet()); // Sécurise les en-têtes HTTP
+// app.use(helmet()); // Désactivé temporairement pour troubleshooting de connexion
 app.use(compression()); // Compresse les réponses pour la performance
 
 // Restriction CORS (Production vs Développement)
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : true, // Autorise tout en dev, ou l'URL Vercel en prod
+  origin: true, // Autorise tout en dev et local (mirrors origin)
   credentials: true
 };
 app.use(cors(corsOptions));

@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../components/Toast';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
-  Authorization: `Bearer ${localStorage.getItem('token')}`
-});
+import API from '../services/api';
 
 const PERIOD_OPTIONS = [
   { value: 'daily',   label: "Aujourd'hui",    icon: '📅' },
@@ -60,15 +54,15 @@ const ReportsPage = () => {
   }, [period]);
 
   /**
-   * Récupère les données du rapport pour une période donnée.
+   * Récupère les données du rapport pour une période donnée via l'instance Axios centralisée.
    */
   const fetchReport = async (p) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/reports?period=${p}`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error('Erreur');
-      const data = await res.json();
-      setReport(data);
+      const res = await API.get('/reports', {
+        params: { period: p }
+      });
+      setReport(res.data);
     } catch (err) {
       toast.error('Impossible de charger le rapport');
     } finally {
@@ -183,7 +177,7 @@ const ReportsPage = () => {
                         <span className="text-xs font-black text-gray-400 w-5">#{i + 1}</span>
                         <div className="flex-1">
                           <div className="flex justify-between mb-1">
-                            <span className="text-sm font-bold text-gray-900 dark:text-white">{p.product_name}</span>
+                             <span className="text-sm font-bold text-gray-900 dark:text-white">{p.product_name}</span>
                             <span className="text-sm font-black text-rose-600">{p.total_pertes} {p.unit}</span>
                           </div>
                           <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">

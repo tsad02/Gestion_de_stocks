@@ -1,54 +1,36 @@
-import axios from 'axios';
-
-const API_URL = '/api';
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return { Authorization: `Bearer ${token}` };
-};
+import API from './api';
 
 const inventoryAPI = {
   // --- Produits ---
   getProducts: async () => {
-    const res = await axios.get(`${API_URL}/products`, {
-      headers: getAuthHeaders()
-    });
+    const res = await API.get('/products');
     return Array.isArray(res.data) ? res.data : [];
   },
 
   getProductById: async (id) => {
-    const res = await axios.get(`${API_URL}/products/${id}`, {
-      headers: getAuthHeaders()
-    });
+    const res = await API.get(`/products/${id}`);
     return res.data;
   },
 
   addProduct: async (productData) => {
-    const res = await axios.post(`${API_URL}/products`, productData, {
-      headers: getAuthHeaders()
-    });
+    const res = await API.post('/products', productData);
     return res.data;
   },
 
   updateProduct: async (id, productData) => {
-    const res = await axios.put(`${API_URL}/products/${id}`, productData, {
-      headers: getAuthHeaders()
-    });
+    const res = await API.put(`/products/${id}`, productData);
     return res.data;
   },
 
   deleteProduct: async (id) => {
-    const res = await axios.delete(`${API_URL}/products/${id}`, {
-      headers: getAuthHeaders()
-    });
+    const res = await API.delete(`/products/${id}`);
     return res.data;
   },
 
   // --- Mouvements ---
   getMovements: async (filters = {}) => {
-    const res = await axios.get(`${API_URL}/inventory-movements`, {
+    const res = await API.get('/inventory-movements', {
       params: filters,
-      headers: getAuthHeaders()
     });
     // API returns { total, movements: [...] }
     return {
@@ -58,9 +40,7 @@ const inventoryAPI = {
   },
 
   addMovement: async (movementData) => {
-    const res = await axios.post(`${API_URL}/inventory-movements`, movementData, {
-      headers: getAuthHeaders()
-    });
+    const res = await API.post('/inventory-movements', movementData);
     return res.data;
   }
 };

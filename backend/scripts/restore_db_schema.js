@@ -43,7 +43,7 @@ async function restoreSchema() {
 
         // 5. Recréer les vues (v_product_stock et v_alerts_critical_products)
         console.log("🔹 Mise à jour des vues de stock...");
-        
+
         // v_product_stock: On ignore les TRANSFERTs car ils ne changent pas le volume total, juste la localisation
         await client.query(`
             CREATE OR REPLACE VIEW v_product_stock AS
@@ -131,5 +131,6 @@ async function restoreSchema() {
         client.release();
     }
 }
+console.log("Connexion vers :", process.env.DATABASE_URL || process.env.DB_HOST);
 
 restoreSchema();

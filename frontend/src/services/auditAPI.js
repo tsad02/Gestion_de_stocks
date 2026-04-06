@@ -1,16 +1,19 @@
-import axios from 'axios';
-
-const API_URL = '/api';
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return { Authorization: `Bearer ${token}` };
-};
+import API from './api';
 
 const auditAPI = {
+  /**
+   * Récupère les logs d'audit
+   */
   getAuditLogs: async (limit = 50, offset = 0) => {
-    const res = await axios.get(`${API_URL}/audit?limit=${limit}&offset=${offset}`, { headers: getAuthHeaders() });
-    return res.data;
+    try {
+      const res = await API.get('/audit', {
+        params: { limit, offset }
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Erreur récupération logs d\'audit:', error);
+      throw error;
+    }
   }
 };
 
