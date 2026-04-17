@@ -163,6 +163,11 @@ async function deleteProduct(req, res, next) {
 
     res.json({ message: "Produit supprimé avec succès", id });
   } catch (error) {
+    if (error.code === '23503') {
+      return res.status(400).json({ 
+        error: "Ce produit ne peut pas être supprimé car il possède déjà un historique de mouvements. Vous pouvez le modifier pour l'ajuster." 
+      });
+    }
     next(error);
   }
 }

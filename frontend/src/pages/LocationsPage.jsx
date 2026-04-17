@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import locationsAPI from '../services/locationsAPI';
 import { useToast } from '../components/Toast';
 import ZoneProductsModal from '../components/ZoneProductsModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function LocationsPage() {
   const [locations, setLocations] = useState([]);
@@ -10,6 +11,8 @@ export default function LocationsPage() {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [editingId, setEditingId] = useState(null);
   const [zoneProductsModal, setZoneProductsModal] = useState({ open: false, location: null });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [locationToDelete, setLocationToDelete] = useState(null);
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -40,14 +43,22 @@ export default function LocationsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette localisation ?")) return;
+  const confirmDelete = (id) => {
+    setLocationToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!locationToDelete) return;
     try {
-      await locationsAPI.deleteLocation(id);
+      await locationsAPI.deleteLocation(locationToDelete);
       success('Localisation supprimée');
       fetchLocations();
     } catch (err) {
       error(err.response?.data?.error || 'Erreur lors de la suppression');
+    } finally {
+      setDeleteConfirmOpen(false);
+      setLocationToDelete(null);
     }
   };
 
@@ -103,7 +114,7 @@ export default function LocationsPage() {
                   <td className="p-4 text-right space-x-2">
                     <button onClick={() => setZoneProductsModal({ open: true, location: loc })} className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 p-2 rounded-lg transition-colors" title="Gérer les produits">📦</button>
                     <button onClick={() => handleOpenEdit(loc)} className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-lg transition-colors" title="Modifier">✏️</button>
-                    <button onClick={() => handleDelete(loc.id)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors" title="Supprimer">🗑️</button>
+                    <button onClick={() => confirmDelete(loc.id)} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors" title="Supprimer">🗑️</button>
                   </td>
                 </tr>
               )) : (
@@ -168,6 +179,17 @@ export default function LocationsPage() {
           onSuccess={() => {
             setZoneProductsModal({ open: false, location: null });
           }}
+        />
+      )}
+
+      {deleteConfirmOpen && (
+        <ConfirmModal
+          open={deleteConfirmOpen}
+          title="Supprimer la zone"
+          message="Êtes-vous sûr de vouloir supprimer cette zone de stockage ? Cette action est irréversible."
+          confirmLabel="Supprimer"
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={handleDelete}
         />
       )}
     </div>

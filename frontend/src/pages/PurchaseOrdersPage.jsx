@@ -17,6 +17,7 @@ const PurchaseOrdersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
+  const [autoGenConfirmOpen, setAutoGenConfirmOpen] = useState(false);
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -57,7 +58,7 @@ const PurchaseOrdersPage = () => {
   };
 
   const handleAutoGenerate = async () => {
-    if (!window.confirm("Voulez-vous générer un bon de commande brouillon pour tous les produits critiques ?")) return;
+    setAutoGenConfirmOpen(false);
     try {
       setLoading(true);
       const res = await purchaseOrderAPI.autoCreate();
@@ -110,7 +111,7 @@ const PurchaseOrdersPage = () => {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={handleAutoGenerate}
+            onClick={() => setAutoGenConfirmOpen(true)}
             className="px-6 py-3 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white text-xs font-black rounded-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl shadow-amber-500/30 dark:shadow-none"
           >
             ⚡ Auto-Réap.
@@ -249,13 +250,23 @@ const PurchaseOrdersPage = () => {
 
       {isConfirmOpen && (
         <ConfirmModal
-          isOpen={isConfirmOpen}
+          open={isConfirmOpen}
           title="Supprimer la commande"
           message={`Êtes-vous sûr de vouloir supprimer la commande PO-00${orderToDelete?.id} ?`}
           confirmLabel="Supprimer"
           onCancel={() => setIsConfirmOpen(false)}
           onConfirm={handleDelete}
-          danger={true}
+        />
+      )}
+
+      {autoGenConfirmOpen && (
+        <ConfirmModal
+          open={autoGenConfirmOpen}
+          title="Génération Automatique"
+          message="Voulez-vous générer un bon de commande brouillon pour tous les produits en dessous de leur seuil minimal ?"
+          confirmLabel="Générer"
+          onCancel={() => setAutoGenConfirmOpen(false)}
+          onConfirm={handleAutoGenerate}
         />
       )}
     </div>

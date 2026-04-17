@@ -6,7 +6,7 @@ import React from 'react';
  */
 const CriticalProducts = ({ products = [], handleGenerateOrder }) => {
   const getAlertStyles = (level) => {
-    if (level === 'CRITICAL') {
+    if (level === 'CRITIQUE') {
       return {
         bg: 'bg-rose-50',
         border: 'border-rose-200',
