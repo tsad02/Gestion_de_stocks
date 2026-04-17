@@ -56,7 +56,7 @@ CREATE TABLE products (
 -- ----------------------------------------------------------
 CREATE TABLE inventory_movements (
   id         SERIAL PRIMARY KEY,
-  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   type       movement_type NOT NULL,
   quantity   INTEGER NOT NULL CHECK (quantity > 0),
