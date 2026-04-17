@@ -32,6 +32,10 @@ const InventoryPage = () => {
   const [deleteModal, setDeleteModal] = useState({ open: false, productId: null, productName: '' });
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [editModal, setEditModal] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
+
   // -- Contrôle d'Accès --
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = user.role === 'RESPONSABLE'; // Détermine si l'utilisateur peut supprimer ou ajouter des produits
@@ -106,6 +110,33 @@ const InventoryPage = () => {
     }
   };
 
+  const handleEditProduct = async (e) => {
+    e.preventDefault();
+    if (!editForm.name.trim() || !editForm.category.trim()) {
+      toast.error('Le nom et la catégorie sont obligatoires');
+      return;
+    }
+    try {
+      setEditLoading(true);
+      await inventoryAPI.updateProduct(editForm.id, {
+        name: editForm.name.trim(),
+        category: editForm.category.trim(),
+        unit: editForm.unit,
+        min_threshold: parseInt(editForm.min_threshold) || 0,
+        target_stock: parseInt(editForm.target_stock) || 0,
+        location_id: editForm.location_id ? parseInt(editForm.location_id) : null
+      });
+      setEditModal(false);
+      setEditForm(null);
+      toast.success('Produit modifié avec succès');
+      fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erreur lors de la modification');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const columns = useMemo(() => [
     { 
       key: 'name', 
@@ -174,13 +205,33 @@ const InventoryPage = () => {
       sortable: false,
       className: 'text-right no-print',
       render: (_, row) => (
-        <button 
-          onClick={() => setDeleteModal({ open: true, productId: row.id, productName: row.name })}
-          className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-          title="Supprimer"
-        >
-          🗑️
-        </button>
+        <div className="flex justify-end items-center gap-1">
+          <button 
+            onClick={() => {
+              setEditForm({
+                id: row.id,
+                name: row.name,
+                category: row.category,
+                unit: row.unit || '',
+                min_threshold: row.min_threshold || 0,
+                target_stock: row.target_stock || 0,
+                location_id: row.location_id || ''
+              });
+              setEditModal(true);
+            }}
+            className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+            title="Modifier"
+          >
+            ✏️
+          </button>
+          <button 
+            onClick={() => setDeleteModal({ open: true, productId: row.id, productName: row.name })}
+            className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+            title="Supprimer"
+          >
+            🗑️
+          </button>
+        </div>
       )
     }] : [])
   ], [isAdmin]);
@@ -232,8 +283,8 @@ const InventoryPage = () => {
       {/* Add Product Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-[110] p-4 no-print animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] w-full max-w-xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
-            <div className="px-10 py-8 border-b border-gray-50 dark:border-gray-700/50 flex items-center justify-between bg-gray-50/30 dark:bg-gray-800/30">
+          <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] w-full max-w-xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+            <div className="px-10 py-8 border-b border-gray-50 dark:border-gray-700/50 flex items-center justify-between bg-gray-50/30 dark:bg-gray-800/30 sticky top-0 z-10 backdrop-blur-md">
               <div>
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase leading-none">Nouveau Produit</h2>
                 <p className="text-gray-500 dark:text-gray-400 text-[11px] font-black uppercase tracking-widest mt-2 ml-0.5 opacity-60">Ajouter au catalogue</p>
@@ -339,6 +390,119 @@ const InventoryPage = () => {
                   className="flex-1 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black transition-all disabled:opacity-50 text-xs uppercase tracking-widest shadow-xl shadow-gray-900/20 dark:shadow-none hover:scale-105 active:scale-95"
                 >
                   {addLoading ? '⏳' : 'Créer le produit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {editModal && editForm && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-[110] p-4 no-print animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] w-full max-w-xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+            <div className="px-10 py-8 border-b border-gray-50 dark:border-gray-700/50 flex items-center justify-between bg-gray-50/30 dark:bg-gray-800/30 sticky top-0 z-10 backdrop-blur-md">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase leading-none">Modifier Produit</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-[11px] font-black uppercase tracking-widest mt-2 ml-0.5 opacity-60">Mise à jour du catalogue</p>
+              </div>
+              <button 
+                onClick={() => { setEditModal(false); setEditForm(null); }}
+                className="w-10 h-10 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-400 transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEditProduct} className="p-10 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Nom du produit</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Catégorie</label>
+                  <input
+                    type="text"
+                    value={editForm.category}
+                    onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))}
+                    list="edit_categories"
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner"
+                    required
+                  />
+                  <datalist id="edit_categories">
+                    {categories.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Unité de mesure</label>
+                  <input
+                    type="text"
+                    value={editForm.unit}
+                    onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))}
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Seuil minimal (Alerte)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.min_threshold}
+                    onChange={(e) => setEditForm(f => ({ ...f, min_threshold: e.target.value }))}
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Stock cible idéal</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.target_stock}
+                    onChange={(e) => setEditForm(f => ({ ...f, target_stock: e.target.value }))}
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Zone de stockage</label>
+                  <select
+                    value={editForm.location_id}
+                    onChange={(e) => setEditForm(f => ({ ...f, location_id: e.target.value }))}
+                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-[1.25rem] text-gray-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none transition-all shadow-inner cursor-pointer"
+                  >
+                    <option value="">-- Aucune zone principale --</option>
+                    {locations.map(loc => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => { setEditModal(false); setEditForm(null); }}
+                  className="flex-1 py-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl font-black text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-xs uppercase tracking-widest"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black transition-all disabled:opacity-50 text-xs uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:bg-blue-700 hover:scale-105 active:scale-95"
+                >
+                  {editLoading ? '⏳...' : 'Enregistrer'}
                 </button>
               </div>
             </form>

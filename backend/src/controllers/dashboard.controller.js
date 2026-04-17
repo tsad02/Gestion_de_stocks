@@ -162,7 +162,7 @@ exports.getDashboardSummary = async (req, res, next) => {
             threshold: parseInt(p.min_threshold),
             target_stock: parseInt(p.target_stock),
             needed: parseInt(p.quantity_needed) > 0 ? parseInt(p.quantity_needed) : 0,
-            alert_level: parseInt(p.stock_actuel) <= parseInt(p.min_threshold) / 2 ? 'CRITICAL' : 'WARNING',
+            alert_level: parseInt(p.stock_actuel) <= parseInt(p.min_threshold) / 2 ? 'CRITIQUE' : 'ALERTE',
             days_to_rupture: daysToRupture
           };
         }),

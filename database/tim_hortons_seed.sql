@@ -18,82 +18,86 @@ TRUNCATE TABLE products CASCADE;
 -- On s'assure qu'un utilisateur existe
 INSERT INTO users (full_name, email, password_hash, role)
 SELECT 'Admin Tim Hortons', 'admin@timhortons.ca', 'dummy_hash', 'RESPONSABLE'
-WHERE NOT EXISTS (SELECT 1 FROM users LIMIT 1);
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@timhortons.ca');
+
+INSERT INTO users (full_name, email, password_hash, role)
+SELECT 'Employé Démo', 'employe@test.com', 'dummy_hash', 'EMPLOYE'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'employe@test.com');
 
 -- ==========================================================
 --  3. INJECTER LE CATALOGUE TIM HORTONS (43 Produits)
 -- ==========================================================
 INSERT INTO products (name, category, unit, min_threshold) VALUES
 -- ☕ Boissons chaudes
-('Café original', 'Beverage', 'unité', 50),
-('Dark Roast', 'Beverage', 'unité', 30),
-('Café décaféiné', 'Beverage', 'unité', 20),
-('Latte', 'Beverage', 'unité', 25),
-('Cappuccino', 'Beverage', 'unité', 25),
-('Americano', 'Beverage', 'unité', 20),
-('Espresso', 'Beverage', 'unité', 40),
-('Café vanille française', 'Beverage', 'unité', 30),
-('Thé', 'Beverage', 'unité', 40),
-('Thé vert', 'Beverage', 'unité', 30),
-('Thé chai', 'Beverage', 'unité', 25),
-('Chocolat chaud', 'Beverage', 'unité', 35),
-('Café mocha', 'Beverage', 'unité', 20),
+('Café original', 'Boissons', 'unité', 50),
+('Dark Roast', 'Boissons', 'unité', 30),
+('Café décaféiné', 'Boissons', 'unité', 20),
+('Latte', 'Boissons', 'unité', 25),
+('Cappuccino', 'Boissons', 'unité', 25),
+('Americano', 'Boissons', 'unité', 20),
+('Espresso', 'Boissons', 'unité', 40),
+('Café vanille française', 'Boissons', 'unité', 30),
+('Thé', 'Boissons', 'unité', 40),
+('Thé vert', 'Boissons', 'unité', 30),
+('Thé chai', 'Boissons', 'unité', 25),
+('Chocolat chaud', 'Boissons', 'unité', 35),
+('Café mocha', 'Boissons', 'unité', 20),
 
 -- 🧊 Boissons froides
-('Iced Capp', 'Beverage', 'unité', 40),
-('Iced Coffee', 'Beverage', 'unité', 45),
-('Cold Brew', 'Beverage', 'unité', 30),
-('Frozen Lemonade', 'Beverage', 'unité', 20),
-('Iced Latte', 'Beverage', 'unité', 25),
-('Iced Capp Supreme', 'Beverage', 'unité', 15),
-('Smoothie aux fruits', 'Beverage', 'unité', 20),
-('Boissons énergétiques', 'Beverage', 'unité', 15),
+('Iced Capp', 'Boissons', 'unité', 40),
+('Iced Coffee', 'Boissons', 'unité', 45),
+('Cold Brew', 'Boissons', 'unité', 30),
+('Frozen Lemonade', 'Boissons', 'unité', 20),
+('Iced Latte', 'Boissons', 'unité', 25),
+('Iced Capp Supreme', 'Boissons', 'unité', 15),
+('Smoothie aux fruits', 'Boissons', 'unité', 20),
+('Boissons énergétiques', 'Boissons', 'unité', 15),
 
 -- 🍩 Beignes (Donuts)
-('Boston Cream', 'Donut', 'unité', 40),
-('Honey Cruller', 'Donut', 'unité', 35),
-('Chocolate Dip', 'Donut', 'unité', 30),
-('Vanilla Dip', 'Donut', 'unité', 25),
-('Strawberry Dip', 'Donut', 'unité', 20),
-('Apple Fritter', 'Donut', 'unité', 25),
-('Old Fashioned Plain', 'Donut', 'unité', 30),
-('Old Fashioned Glazed', 'Donut', 'unité', 40),
-('Sour Cream Glazed', 'Donut', 'unité', 35),
-('Double Chocolate', 'Donut', 'unité', 30),
+('Boston Cream', 'Beignes', 'unité', 40),
+('Honey Cruller', 'Beignes', 'unité', 35),
+('Chocolate Dip', 'Beignes', 'unité', 30),
+('Vanilla Dip', 'Beignes', 'unité', 25),
+('Strawberry Dip', 'Beignes', 'unité', 20),
+('Apple Fritter', 'Beignes', 'unité', 25),
+('Old Fashioned Plain', 'Beignes', 'unité', 30),
+('Old Fashioned Glazed', 'Beignes', 'unité', 40),
+('Sour Cream Glazed', 'Beignes', 'unité', 35),
+('Double Chocolate', 'Beignes', 'unité', 30),
 
 -- 🍞 Produits de boulangerie
-('Muffin aux bleuets', 'Bakery', 'unité', 25),
-('Muffin chocolat', 'Bakery', 'unité', 20),
-('Muffin aux fruits', 'Bakery', 'unité', 15),
-('Croissant', 'Bakery', 'unité', 30),
-('Croissant au fromage', 'Bakery', 'unité', 20),
-('Bagel nature', 'Bakery', 'unité', 40),
-('Bagel sésame', 'Bakery', 'unité', 35),
-('Bagel fromage à la crème', 'Bakery', 'unité', 30),
-('Pain aux bananes', 'Bakery', 'unité', 15),
+('Muffin aux bleuets', 'Boulangerie', 'unité', 25),
+('Muffin chocolat', 'Boulangerie', 'unité', 20),
+('Muffin aux fruits', 'Boulangerie', 'unité', 15),
+('Croissant', 'Boulangerie', 'unité', 30),
+('Croissant au fromage', 'Boulangerie', 'unité', 20),
+('Bagel nature', 'Boulangerie', 'unité', 40),
+('Bagel sésame', 'Boulangerie', 'unité', 35),
+('Bagel fromage à la crème', 'Boulangerie', 'unité', 30),
+('Pain aux bananes', 'Boulangerie', 'unité', 15),
 
 -- 🥪 Sandwichs déjeuner
-('Bacon Breakfast Sandwich', 'Breakfast', 'unité', 25),
-('Sausage Breakfast Sandwich', 'Breakfast', 'unité', 20),
-('Farmer''s Wrap', 'Breakfast', 'unité', 30),
-('Grilled Breakfast Wrap', 'Breakfast', 'unité', 25),
-('Omelette Breakfast Sandwich', 'Breakfast', 'unité', 15),
+('Bacon Breakfast Sandwich', 'Petit-déjeuner', 'unité', 25),
+('Sausage Breakfast Sandwich', 'Petit-déjeuner', 'unité', 20),
+('Farmer''s Wrap', 'Petit-déjeuner', 'unité', 30),
+('Grilled Breakfast Wrap', 'Petit-déjeuner', 'unité', 25),
+('Omelette Breakfast Sandwich', 'Petit-déjeuner', 'unité', 15),
 
 -- 🍗 Repas / Lunch
-('Sandwich au poulet', 'Lunch', 'unité', 20),
-('Wrap au poulet', 'Lunch', 'unité', 25),
-('Sandwich au steak', 'Lunch', 'unité', 15),
-('Chili', 'Lunch', 'portion', 20),
-('Soupe du jour', 'Lunch', 'portion', 25),
-('Salade César', 'Lunch', 'portion', 15),
-('Salade jardin', 'Lunch', 'portion', 15),
+('Sandwich au poulet', 'Dîner', 'unité', 20),
+('Wrap au poulet', 'Dîner', 'unité', 25),
+('Sandwich au steak', 'Dîner', 'unité', 15),
+('Chili', 'Dîner', 'portion', 20),
+('Soupe du jour', 'Dîner', 'portion', 25),
+('Salade César', 'Dîner', 'portion', 15),
+('Salade jardin', 'Dîner', 'portion', 15),
 
 -- 🍪 Desserts et collations
-('Timbits Assortis', 'Dessert', 'boite', 50),
-('Biscuit aux pépites de chocolat', 'Dessert', 'unité', 30),
-('Biscuit double chocolat', 'Dessert', 'unité', 25),
-('Brownie', 'Dessert', 'unité', 20),
-('Barre granola', 'Dessert', 'unité', 15);
+('Timbits Assortis', 'Desserts', 'boite', 50),
+('Biscuit aux pépites de chocolat', 'Desserts', 'unité', 30),
+('Biscuit double chocolat', 'Desserts', 'unité', 25),
+('Brownie', 'Desserts', 'unité', 20),
+('Barre granola', 'Desserts', 'unité', 15);
 
 -- ==========================================================
 --  4. GENERER DES MOUVEMENTS DE STOCKS (Pour les KPI)

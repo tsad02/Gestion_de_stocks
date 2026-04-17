@@ -106,6 +106,6 @@ Pour approfondir, consultez nos guides détaillés :
 ---
 
 ## 👨‍💻 Auteur
-Développé dans le cadre du projet **Gestion de Stocks S6/S7**.
+Développé dans le cadre du projet **Gestion de Stocks**.
 
 *© 2026 TTDJAPP - Tous droits réservés.*

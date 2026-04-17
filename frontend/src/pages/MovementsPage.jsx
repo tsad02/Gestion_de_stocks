@@ -18,6 +18,9 @@ const MovementsPage = () => {
   
   // Filters
   const [typeFilter, setTypeFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
+  const [dateStartFilter, setDateStartFilter] = useState('');
+  const [dateEndFilter, setDateEndFilter] = useState('');
 
   // -- État du Formulaire --
   // Initialisé avec les nouveaux champs de perte et d'ajustement
@@ -182,9 +185,24 @@ const MovementsPage = () => {
   ], []);
 
   const filteredMovements = useMemo(() => {
-    if (!typeFilter) return movements;
-    return movements.filter(m => m.type === typeFilter);
-  }, [movements, typeFilter]);
+    return movements.filter(m => {
+      let pass = true;
+      if (typeFilter && m.type !== typeFilter) pass = false;
+      if (productFilter && m.product_id?.toString() !== productFilter) pass = false;
+      if (dateStartFilter) {
+        const d1 = new Date(dateStartFilter);
+        const mDate = new Date(m.created_at || m.timestamp);
+        if (mDate < d1) pass = false;
+      }
+      if (dateEndFilter) {
+        const d2 = new Date(dateEndFilter);
+        d2.setHours(23, 59, 59, 999);
+        const mDate = new Date(m.created_at || m.timestamp);
+        if (mDate > d2) pass = false;
+      }
+      return pass;
+    });
+  }, [movements, typeFilter, productFilter, dateStartFilter, dateEndFilter]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -202,21 +220,66 @@ const MovementsPage = () => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex bg-white/50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-700 w-fit gap-1 shadow-sm flex-wrap">
-        {['', 'ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT', 'AJUSTEMENT'].map(t => (
-          <button
-            key={t}
-            onClick={() => setTypeFilter(t)}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${
-              typeFilter === t 
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md' 
-                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-            }`}
+      {/* Filters Options */}
+      <div className="flex flex-col md:flex-row gap-4 bg-white/50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div className="flex bg-gray-100 dark:bg-gray-900/50 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 w-fit gap-1 shadow-inner flex-wrap">
+          {['', 'ENTREE', 'SORTIE', 'PERTE', 'TRANSFERT', 'AJUSTEMENT'].map(t => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t)}
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all uppercase tracking-wider ${
+                typeFilter === t 
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md' 
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+              }`}
+            >
+              {t === '' ? 'Tous' : t}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 flex gap-4 min-w-[200px]">
+          <select 
+            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-amber-500/30 flex-1 cursor-pointer"
+            value={productFilter}
+            onChange={e => setProductFilter(e.target.value)}
           >
-            {t === '' ? 'Tous' : t}
-          </button>
-        ))}
+            <option value="">Tous les produits</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id.toString()}>{p.name}</option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <input 
+              type="date"
+              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-amber-500/30"
+              value={dateStartFilter}
+              onChange={e => setDateStartFilter(e.target.value)}
+            />
+            <span className="text-gray-400 font-bold">-</span>
+            <input 
+              type="date"
+              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-amber-500/30"
+              value={dateEndFilter}
+              onChange={e => setDateEndFilter(e.target.value)}
+            />
+            {(dateStartFilter || dateEndFilter || productFilter || typeFilter) && (
+              <button 
+                onClick={() => {
+                  setDateStartFilter('');
+                  setDateEndFilter('');
+                  setProductFilter('');
+                  setTypeFilter('');
+                }}
+                className="ml-2 text-[10px] uppercase font-black tracking-widest text-rose-500 hover:text-rose-600 transition-colors"
+                title="Effacer filtres"
+              >
+                ✕ Effacer
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Content */}
