@@ -38,8 +38,7 @@ exports.getDashboardSummary = async (req, res, next) => {
         COALESCE(c.total_out, 0) AS monthly_consumption
       FROM v_alerts_critical_products v
       LEFT JOIN consumption c ON v.product_id = c.product_id
-      ORDER BY v.stock_actuel ASC
-      LIMIT 10;
+      ORDER BY v.stock_actuel ASC;
     `;
 
     // 3. Statistiques Mouvements (7 derniers jours)
